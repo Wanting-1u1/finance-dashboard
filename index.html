@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance — Wanting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+#pw-overlay {
+  position: fixed; inset: 0; background: #f0eff4;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+}
+#pw-overlay.hidden { display: none; }
+.pw-box {
+  background: #fff; border-radius: 16px; padding: 48px 40px;
+  width: 360px; box-shadow: 0 4px 24px rgba(0,0,0,.10);
+  text-align: center;
+}
+.pw-box h2 {
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700;
+  margin-bottom: 6px; color: #1a1823;
+}
+.pw-box p { color: #6b6878; font-size: 14px; margin-bottom: 28px; }
+.pw-box input {
+  width: 100%; padding: 12px 16px; border: 1px solid rgba(0,0,0,.15);
+  border-radius: 8px; font-size: 15px; outline: none;
+  margin-bottom: 12px; font-family: inherit;
+}
+.pw-box input:focus { border-color: #0d9488; }
+.pw-box button {
+  width: 100%; padding: 12px; background: #0d9488; color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.pw-box button:hover { background: #0b7a71; }
+.pw-error { color: #dc2626; font-size: 13px; margin-top: 8px; min-height: 18px; }
+:root {
+  --bg:      #f0eff4;
+  --surf:    #ffffff;
+  --surf2:   #f5f4f9;
+  --surf3:   #ebe9f2;
+  --bd:      rgba(0,0,0,.08);
+  --bd2:     rgba(0,0,0,.15);
+  --shadow:  0 1px 4px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --text:    #1a1823;
+  --muted:   #6b6878;
+  --muted2:  #9897a8;
+  --accent:  #0d9488;
+  --green:   #059669;
+  --red:     #dc2626;
+  --blue:    #2563eb;
+  --purple:  #7c3aed;
+  --r:       10px;
+  --r-sm:    6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+header {
+  background: var(--surf);
+  border-bottom: 1px solid var(--bd);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 18px 0;
+  white-space: nowrap;
+  margin-right: 28px;
+}
+.logo span { color: var(--accent); }
+.tab-nav { display: flex; flex: 1; }
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 18px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color .15s, border-color .15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+.header-actions { margin-left: auto; display: flex; gap: 8px; padding: 0; }
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--bd2);
+  border-radius: var(--r-sm);
+  color: var(--muted2);
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  transition: all .15s;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+main { max-width: 1240px; margin: 0 auto; padding: 28px 32px 64px; }
+#review-banner {
+  background: rgba(13,148,136,.07);
+  border: 1px solid rgba(13,148,136,.3);
+  border-radius: var(--r);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+}
+#review-banner.visible { display: flex; }
+#review-banner p { flex: 1; color: var(--accent); font-size: 13px; }
+#review-banner p strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.view-panel { display: none; }
+.view-panel.active { display: block; }
+.sub-nav { display: flex; gap: 6px; margin-bottom: 28px; }
+.sub-btn {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: 20px;
+  color: var(--muted2);
+  cursor: pointer;
+  padding: 6px 18px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all .15s;
+  box-shadow: var(--shadow);
+}
+.sub-btn:hover { border-color: var(--accent); color: var(--text); }
+.sub-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--muted);
+  margin-bottom: 14px;
+  display: block;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.card {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.card.income::before  { background: var(--green); }
+.card.expense::before { background: var(--red); }
+.card.savings::before { background: var(--blue); }
+.card.goal::before    { background: var(--accent); }
+.card.wli::before     { background: var(--blue); }
+.card.zxing::before   { background: var(--purple); }
+.card.neutral::before { background: var(--surf3); }
+.card-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.card-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.card-value.green  { color: var(--green); }
+.card-value.red    { color: var(--red); }
+.card-value.blue   { color: var(--blue); }
+.card-value.amber  { color: var(--accent); }
+.card-value.purple { color: var(--purple); }
+.card-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.goal-bar {
+  margin-top: 12px;
+  background: var(--surf3);
+  border-radius: 4px;
+  height: 4px;
+  overflow: hidden;
+}
+.goal-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .6s cubic-bezier(.22,1,.36,1);
+}
+.income-breakdown {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow);
+}
+.income-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.income-row:last-child { margin-bottom: 0; }
+.income-source { font-size: 13px; color: var(--text); min-width: 120px; }
+.income-bar-wrap {
+  flex: 1;
+  height: 5px;
+  background: var(--surf3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.income-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--green);
+  transition: width .5s ease;
+}
+.income-amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+  text-align: right;
+}
+.income-pct { font-size: 11px; color: var(--muted); min-width: 36px; text-align: right; }
+.chart-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.chart-grid-equal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.chart-card {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.chart-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted2);
+  margin-bottom: 18px;
+}
+.chart-wrap    { position: relative; height: 240px; }
+.chart-wrap-sm { position: relative; height: 210px; }
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.month-nav button {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  padding: 7px 14px;
+  font-size: 13px;
+  transition: all .15s;
+  box-shadow: var(--shadow);
+}
+.month-nav button:hover { border-color: var(--accent); }
+.month-nav button:disabled { opacity: .3; cursor: default; }
+.month-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 130px;
+  text-align: center;
+}
+.cat-list { display: flex; flex-direction: column; gap: 10px; }
+.cat-row { display: flex; align-items: center; gap: 10px; }
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cat-name { flex: 1; color: var(--text); font-size: 13px; }
+.cat-amount {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.cat-pct { font-size: 11px; color: var(--muted); min-width: 36px; text-align: right; }
+.cat-bar-bg { width: 80px; height: 3px; background: var(--surf3); border-radius: 2px; }
+.cat-bar-fill { height: 100%; border-radius: 2px; }
+.person-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.person-card {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.person-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--bd);
+}
+.person-badge {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.person-badge.wli   { background: rgba(37,99,235,.1); color: var(--blue); }
+.person-badge.zxing { background: rgba(124,58,237,.1); color: var(--purple); }
+.person-total {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.person-total.wli   { color: var(--blue); }
+.person-total.zxing { color: var(--purple); }
+.table-section {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.table-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--bd);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.table-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+.table-count { font-size: 12px; color: var(--muted); }
+.tx-table { width: 100%; border-collapse: collapse; }
+.tx-table th {
+  padding: 10px 22px;
+  text-align: left;
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--bd);
+  background: var(--surf2);
+}
+.tx-table td {
+  padding: 11px 22px;
+  border-bottom: 1px solid var(--bd);
+  vertical-align: middle;
+}
+.tx-table tr:last-child td { border-bottom: none; }
+.tx-table tr:hover td { background: var(--surf2); }
+.tx-date { color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tx-desc { color: var(--text); font-size: 13px; max-width: 280px; }
+.tx-account { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
+.tx-amount {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tx-amount.income  { color: var(--green); }
+.tx-amount.expense { color: var(--red); }
+.cat-select {
+  background: var(--surf2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.cat-select:focus { outline: none; border-color: var(--accent); }
+.badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; margin-left: 6px; }
+.badge-review { background: rgba(13,148,136,.1); color: var(--accent); border: 1px solid rgba(13,148,136,.3); }
+.member-pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.member-pill.wli   { background: rgba(37,99,235,.1); color: var(--blue); }
+.member-pill.zxing { background: rgba(124,58,237,.1); color: var(--purple); }
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.insight-card {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  box-shadow: var(--shadow);
+}
+.insight-icon { font-size: 20px; line-height: 1.2; }
+.insight-body strong { display: block; font-size: 13px; color: var(--text); margin-bottom: 3px; }
+.insight-body p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surf);
+  border: 1px solid var(--bd2);
+  border-radius: 14px;
+  width: 520px;
+  max-width: 96vw;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,.18);
+}
+.modal-head {
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid var(--bd);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color .15s;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 18px 26px; overflow-y: auto; flex: 1; }
+.modal-foot { padding: 16px 26px; border-top: 1px solid var(--bd); flex-shrink: 0; }
+.modal-foot-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.cat-manage-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--bd);
+}
+.cat-manage-row:last-child { border-bottom: none; }
+.cat-manage-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.cat-manage-name { flex: 1; font-size: 13px; color: var(--text); }
+.cat-rename-input {
+  flex: 1;
+  background: var(--surf2);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  padding: 4px 8px;
+  outline: none;
+}
+.cat-manage-actions { display: flex; gap: 4px; }
+.btn-sm {
+  background: none;
+  border: 1px solid var(--bd2);
+  border-radius: var(--r-sm);
+  color: var(--muted2);
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  padding: 3px 9px;
+  transition: all .15s;
+}
+.btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
+.btn-sm.confirm { border-color: var(--green); color: var(--green); }
+.add-cat-form { display: flex; gap: 8px; align-items: center; }
+.add-cat-input {
+  flex: 1;
+  background: var(--surf2);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+.add-cat-input:focus { border-color: var(--accent); }
+.btn-primary {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--r-sm);
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-primary:disabled { opacity: .5; cursor: default; }
+.color-swatches { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.color-swatch {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .15s, border-color .15s;
+}
+.color-swatch:hover { transform: scale(1.2); }
+.color-swatch.selected { border-color: var(--text); }
+.modal-note { font-size: 11px; color: var(--muted); margin-top: 10px; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.filter-select {
+  background: var(--surf);
+  border: 1px solid var(--bd2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+}
+.filter-select:focus { border-color: var(--accent); }
+.upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.upload-slot-label {
+  display: block;
+  border: 1.5px dashed var(--bd2);
+  border-radius: var(--r);
+  padding: 16px 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .15s, background .15s;
+}
+.upload-slot-label:hover { border-color: var(--accent); background: rgba(13,148,136,.04); }
+.upload-slot-label input[type=file] { display: none; }
+.upload-slot-name { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text); margin-bottom: 3px; }
+.upload-slot-type { font-size: 11px; color: var(--muted); }
+.upload-slot-file { font-size: 11px; color: var(--accent); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upload-status { font-size: 13px; padding: 8px 12px; border-radius: var(--r-sm); min-height: 36px; display: flex; align-items: center; }
+.upload-status.info    { background: rgba(13,148,136,.08); color: #0f766e; }
+.upload-status.success { background: rgba(5,150,105,.08); color: #059669; }
+.upload-status.error   { background: rgba(220,38,38,.08); color: #dc2626; }
+@media (max-width: 900px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-grid-equal { grid-template-columns: 1fr; }
+  .person-grid { grid-template-columns: 1fr; }
+  main { padding: 20px 20px 48px; }
+  header { padding: 0 20px; }
+}
+@media (max-width: 600px) {
+  .card-grid { grid-template-columns: 1fr 1fr; }
+  .card-value { font-size: 22px; }
+  .upload-grid { grid-template-columns: 1fr; }
+}
+.plan-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+.plan-table th { color: var(--muted); font-weight: 600; text-align: left; padding: 6px 12px; border-bottom: 1px solid var(--bd); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.plan-table td { padding: 10px 12px; border-bottom: 1px solid var(--bd); }
+.plan-table tfoot td { font-weight: 700; color: var(--text); border-top: 2px solid var(--bd2); border-bottom: none; }
+.plan-table .plan-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.plan-actions-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--muted); padding: 2px 5px; border-radius: 4px; }
+.plan-actions-btn:hover { background: var(--surf3); color: var(--text); }
+.plan-total-card { background: var(--surf); border: 1px solid var(--bd); border-radius: var(--r); padding: 20px 24px; display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+.plan-total-label { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 4px; }
+.plan-total-value { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 700; color: var(--text); }
+.plan-total-sub { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+.plan-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div id="pw-overlay">
+  <div class="pw-box">
+    <h2>Finance Dashboard</h2>
+    <p>Enter password to continue</p>
+    <input type="password" id="pw-input" placeholder="Password" autofocus />
+    <button onclick="checkPw()">Enter</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
+<script>
+(function() {
+  if (sessionStorage.getItem('fd_auth') === '1') {
+    document.getElementById('pw-overlay').classList.add('hidden');
+  }
+  document.getElementById('pw-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkPw();
+  });
+})();
+function checkPw() {
+  var val = document.getElementById('pw-input').value;
+  if (val === 'thereisazz') {
+    sessionStorage.setItem('fd_auth', '1');
+    document.getElementById('pw-overlay').classList.add('hidden');
+  } else {
+    document.getElementById('pw-error').textContent = 'Incorrect password.';
+    document.getElementById('pw-input').value = '';
+  }
+}
+</script>
+
+<!-- ════════ CATEGORY MODAL ════════ -->
+<div id="cat-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Manage Categories</div>
+      <button class="modal-close" onclick="closeCatModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="cat-manage-list"></div>
+    </div>
+    <div class="modal-foot">
+      <div class="modal-foot-title">Add New Category</div>
+      <div class="add-cat-form">
+        <input type="text" id="new-cat-name" class="add-cat-input" placeholder="Category name…" maxlength="30">
+        <button class="btn-primary" onclick="addCategory()">Add</button>
+      </div>
+      <div class="color-swatches" id="color-swatches"></div>
+      <div class="modal-note">Renaming updates all transactions. Deleting moves transactions to "Other".</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ UPLOAD MODAL ════════ -->
+<div id="upload-modal" class="modal-overlay">
+  <div class="modal" style="width:580px">
+    <div class="modal-head">
+      <div class="modal-title">Import Month</div>
+      <button class="modal-close" onclick="closeUploadModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:flex-end">
+        <div>
+          <div class="modal-foot-title" style="margin-bottom:6px">Month</div>
+          <select id="upload-month" class="filter-select">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div>
+          <div class="modal-foot-title" style="margin-bottom:6px">Year</div>
+          <input type="number" id="upload-year" class="filter-select" value="2026" min="2024" max="2035" style="width:90px">
+        </div>
+      </div>
+      <div class="upload-grid">
+        <label class="upload-slot-label" for="file-commbank">
+          <div class="upload-slot-name">CommBank</div>
+          <div class="upload-slot-type">Smart Access · PDF</div>
+          <div class="upload-slot-file" id="file-commbank-name">No file selected</div>
+          <input type="file" id="file-commbank" accept=".pdf" onchange="showFileName('file-commbank-name',this)">
+        </label>
+        <label class="upload-slot-label" for="file-wpsave">
+          <div class="upload-slot-name">Westpac Saving</div>
+          <div class="upload-slot-type">Westpac Life · PDF</div>
+          <div class="upload-slot-file" id="file-wpsave-name">No file selected</div>
+          <input type="file" id="file-wpsave" accept=".pdf" onchange="showFileName('file-wpsave-name',this)">
+        </label>
+        <label class="upload-slot-label" for="file-wpspend">
+          <div class="upload-slot-name">Westpac Spend</div>
+          <div class="upload-slot-type">Westpac Choice · PDF</div>
+          <div class="upload-slot-file" id="file-wpspend-name">No file selected</div>
+          <input type="file" id="file-wpspend" accept=".pdf" onchange="showFileName('file-wpspend-name',this)">
+        </label>
+        <label class="upload-slot-label" for="file-amex">
+          <div class="upload-slot-name">AMEX Gold</div>
+          <div class="upload-slot-type">Family Card · XLSX</div>
+          <div class="upload-slot-file" id="file-amex-name">No file selected</div>
+          <input type="file" id="file-amex" accept=".xlsx,.xls" onchange="showFileName('file-amex-name',this)">
+        </label>
+      </div>
+      <div id="upload-status" class="upload-status"></div>
+    </div>
+    <div class="modal-foot" style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn-ghost" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn-primary" id="upload-btn" onclick="processUpload()">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ LOG MONTH MODAL (Finance Plan) ════════ -->
+<div id="log-modal" class="modal-overlay">
+  <div class="modal" style="width:420px">
+    <div class="modal-head">
+      <div class="modal-title" id="log-modal-title">Log Month</div>
+      <button class="modal-close" onclick="closeLogModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:12px;margin-bottom:20px">
+        <div style="flex:1">
+          <div class="modal-foot-title" style="margin-bottom:6px;font-size:12px;color:var(--muted)">Month</div>
+          <select id="log-month" class="filter-select" style="width:100%">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div>
+          <div class="modal-foot-title" style="margin-bottom:6px;font-size:12px;color:var(--muted)">Year</div>
+          <input type="number" id="log-year" class="filter-select" value="2026" min="2024" max="2035" style="width:90px">
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:8px">
+        <div style="flex:1">
+          <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Wanting ($)</div>
+          <input type="number" id="log-wanting" class="filter-select" placeholder="0" min="0" step="1" style="width:100%">
+        </div>
+        <div style="flex:1">
+          <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Partner ($)</div>
+          <input type="number" id="log-partner" class="filter-select" placeholder="0" min="0" step="1" style="width:100%">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot" style="display:flex;justify-content:flex-end;gap:10px">
+      <button class="btn-ghost" onclick="closeLogModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveContribution()">Save</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">Finance <span>↗</span></div>
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('personal')">Personal</button>
+    <button class="tab-btn" onclick="switchTab('family')">Family · AMEX</button>
+    <button class="tab-btn" onclick="switchTab('plan')">Finance Plan</button>
+  </nav>
+  <div class="header-actions">
+    <button class="btn-ghost" onclick="openUploadModal()">↑ Import Month</button>
+    <button class="btn-ghost" onclick="openCatModal()">⊞ Categories</button>
+  </div>
+</header>
+
+<main>
+  <div id="review-banner">
+    <div style="font-size:16px">⚠</div>
+    <p>
+      <strong id="review-count">1 transaction needs your review</strong>
+      A withdrawal couldn't be auto-categorised. Go to Monthly Review and check the flagged transaction.
+    </p>
+  </div>
+
+  <!-- ════════ PERSONAL TAB ════════ -->
+  <div id="tab-personal" class="tab-panel active">
+    <div class="sub-nav">
+      <button class="sub-btn active" onclick="switchPersonalView('yearly')">Yearly Overview</button>
+      <button class="sub-btn" onclick="switchPersonalView('monthly')">Monthly Review</button>
+    </div>
+
+    <div id="personal-yearly" class="view-panel active">
+      <span class="section-title">2026 Summary</span>
+      <div class="card-grid" id="personal-yearly-cards"></div>
+      <div id="personal-yearly-income-breakdown" class="income-breakdown" style="display:none"></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Monthly Income vs Expenses</div>
+          <div class="chart-wrap"><canvas id="chart-yearly-bar"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Expenses by Category</div>
+          <div class="chart-wrap"><canvas id="chart-yearly-donut"></canvas></div>
+        </div>
+      </div>
+      <span class="section-title">Full-Year Category Breakdown</span>
+      <div style="background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)">
+        <div id="personal-yearly-cats" class="cat-list"></div>
+      </div>
+    </div>
+
+    <div id="personal-monthly" class="view-panel">
+      <div class="month-nav">
+        <button id="personal-prev" onclick="changePersonalMonth(-1)">← Prev</button>
+        <div class="month-label" id="personal-month-label"></div>
+        <button id="personal-next" onclick="changePersonalMonth(1)">Next →</button>
+      </div>
+      <span class="section-title">Insights</span>
+      <div id="personal-insights" class="insights-grid" style="margin-bottom:28px"></div>
+      <div class="card-grid" id="personal-monthly-cards"></div>
+      <div id="personal-monthly-income-breakdown" class="income-breakdown" style="display:none"></div>
+      <div class="chart-grid-equal">
+        <div class="chart-card">
+          <div class="chart-title">Expense Categories</div>
+          <div class="chart-wrap-sm"><canvas id="chart-monthly-pie"></canvas></div>
+        </div>
+        <div class="chart-card" style="overflow-y:auto">
+          <div class="chart-title">Category Breakdown</div>
+          <div id="personal-monthly-cats" class="cat-list"></div>
+        </div>
+      </div>
+      <div class="table-section">
+        <div class="table-header">
+          <span class="table-title">Transactions</span>
+          <span class="table-count" id="personal-tx-count"></span>
+        </div>
+        <div style="padding:10px 22px 4px">
+          <div class="filter-bar">
+            <select class="filter-select" id="personal-acct-filter" onchange="setPersonalFilter('account',this.value)">
+              <option value="all">All Accounts</option>
+              <option value="commbank">CommBank</option>
+              <option value="westpac-save">Westpac Saving</option>
+              <option value="westpac-spend">Westpac Spend</option>
+            </select>
+            <select class="filter-select" id="personal-cat-filter" onchange="setPersonalFilter('category',this.value)"></select>
+          </div>
+        </div>
+        <table class="tx-table">
+          <thead><tr>
+            <th>Date</th><th>Description</th><th>Category</th><th style="text-align:right">Amount</th>
+          </tr></thead>
+          <tbody id="personal-tx-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ FAMILY TAB ════════ -->
+  <div id="tab-family" class="tab-panel">
+    <div class="sub-nav">
+      <button class="sub-btn active" onclick="switchFamilyView('yearly')">Yearly Overview</button>
+      <button class="sub-btn" onclick="switchFamilyView('monthly')">Monthly Review</button>
+    </div>
+
+    <div id="family-yearly" class="view-panel active">
+      <span class="section-title">2026 Summary · AMEX Gold</span>
+      <div class="card-grid" id="family-yearly-cards"></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Monthly Spending by Category</div>
+          <div class="chart-wrap"><canvas id="chart-family-yearly-bar"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Spending by Category</div>
+          <div class="chart-wrap"><canvas id="chart-family-yearly-donut"></canvas></div>
+        </div>
+      </div>
+      <span class="section-title">Full-Year Category Breakdown</span>
+      <div style="background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)">
+        <div id="family-yearly-cats" class="cat-list"></div>
+      </div>
+    </div>
+
+    <div id="family-monthly" class="view-panel">
+      <div class="month-nav">
+        <button id="family-prev" onclick="changeFamilyMonth(-1)">← Prev</button>
+        <div class="month-label" id="family-month-label"></div>
+        <button id="family-next" onclick="changeFamilyMonth(1)">Next →</button>
+      </div>
+      <span class="section-title">Insights</span>
+      <div id="family-insights" class="insights-grid"></div>
+      <div class="card-grid" id="family-monthly-cards"></div>
+      <span class="section-title">Per Person Breakdown</span>
+      <div class="person-grid" id="family-person-breakdown"></div>
+      <div class="chart-grid-equal">
+        <div class="chart-card">
+          <div class="chart-title">Spending by Category</div>
+          <div class="chart-wrap-sm"><canvas id="chart-family-monthly-pie"></canvas></div>
+        </div>
+        <div class="chart-card" style="overflow-y:auto">
+          <div class="chart-title">Category Breakdown</div>
+          <div id="family-monthly-cats" class="cat-list"></div>
+        </div>
+      </div>
+      <div class="table-section">
+        <div class="table-header">
+          <span class="table-title">Transactions</span>
+          <span class="table-count" id="family-tx-count"></span>
+        </div>
+        <div style="padding:10px 22px 4px">
+          <div class="filter-bar">
+            <select class="filter-select" id="family-member-filter" onchange="setFamilyFilter('member',this.value)">
+              <option value="all">All Members</option>
+              <option value="W LI">W LI</option>
+              <option value="Z XING">Z XING</option>
+            </select>
+            <select class="filter-select" id="family-cat-filter" onchange="setFamilyFilter('category',this.value)"></select>
+          </div>
+        </div>
+        <table class="tx-table">
+          <thead><tr>
+            <th>Date</th><th>Description</th><th>Member</th><th>Category</th><th style="text-align:right">Amount</th>
+          </tr></thead>
+          <tbody id="family-tx-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ FINANCE PLAN TAB ════════ -->
+  <div id="tab-plan" class="tab-panel">
+    <div class="plan-section-header">
+      <span class="section-title">Trip Saver</span>
+      <button class="btn-ghost" onclick="openLogModal()">+ Log Month</button>
+    </div>
+    <div id="plan-total-card" class="plan-total-card"></div>
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">Monthly Contributions</div>
+      <div class="chart-wrap"><canvas id="chart-plan-bar"></canvas></div>
+    </div>
+    <table class="plan-table">
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th>Wanting</th>
+          <th>Partner</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="plan-table-body"></tbody>
+      <tfoot id="plan-table-foot"></tfoot>
+    </table>
+  </div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const SAVINGS_GOAL_PCT = 40;
+const INCOME_CATS = new Set(['Salary', 'Interest', 'Other Income']);
+
+const DEFAULT_CAT_COLORS = {
+  'Salary':        '#059669',
+  'Interest':      '#2563eb',
+  'Other Income':  '#0d9488',
+  'Rent':          '#e3b341',
+  'Groceries':     '#84cc16',
+  'Dining':        '#f97316',
+  'Transport':     '#38bdf8',
+  'Health':        '#ec4899',
+  'Subscriptions': '#8b5cf6',
+  'Internet':      '#6366f1',
+  'Shopping':      '#f43f5e',
+  'Entertainment': '#fbbf24',
+  'Bank Fees':     '#6b7280',
+  'Personal':      '#94a3b8',
+  'Bills':         '#d97706',
+  'Other':         '#475569',
+};
+
+const SWATCH_COLORS = [
+  '#059669','#2563eb','#0d9488','#f97316','#ec4899',
+  '#8b5cf6','#38bdf8','#84cc16','#f43f5e','#fbbf24',
+  '#14b8a6','#a78bfa','#fb923c','#4ade80','#94a3b8',
+  '#e879f9',
+];
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const AUTO_CAT_RULES = [
+  { pattern: /salary|wages|sparro/i, cat: 'Salary' },
+  { pattern: /interest/i, cat: 'Interest' },
+  { pattern: /coles|woolworths|iga|supa iga|thai kee|romeos|village convenience|ww metro/i, cat: 'Groceries' },
+  { pattern: /uber eats|menulog|doordash|hungrypanda|fishbowl|fishbo|luneburger|caffe lev|spago|ground enterprise|kitchen by mike/i, cat: 'Dining' },
+  { pattern: /uber trip|transportfornsw|opal/i, cat: 'Transport' },
+  { pattern: /nib health|medibank|chemist warehouse|classpass|dance|dancekool|crossover dance|ix dance|sinergi/i, cat: 'Health' },
+  { pattern: /apple\.com\/bill|netflix|spotify|canva|miro|render\.com|superultra|shadowsocks|claude\.ai|openai|chatgpt|data plan/i, cat: 'Subscriptions' },
+  { pattern: /superloop|broadband/i, cat: 'Internet' },
+  { pattern: /rent/i, cat: 'Rent' },
+  { pattern: /bank fee|overdraw fee|excess interest|international transaction/i, cat: 'Bank Fees' },
+  { pattern: /myer|umall|mitchell|ugg|original ugg/i, cat: 'Shopping' },
+  { pattern: /ticketmaster|tickets\*ronald|ronald/i, cat: 'Entertainment' },
+];
+
+// ═══════════════════════════════════════════════
+// PERSONAL SEED DATA
+// ═══════════════════════════════════════════════
+const PERSONAL_SEED = [
+  // CommBank January
+  {id:'cb-j1',  account:'commbank',      date:'2026-01-03', desc:'APPLE.COM/BILL',                          amount:-22.99,  cat:'Subscriptions'},
+  {id:'cb-j2',  account:'commbank',      date:'2026-01-03', desc:'Transfer To Y LI',                        amount:-20.00,  cat:'Personal'},
+  {id:'cb-j3',  account:'commbank',      date:'2026-01-06', desc:'NIB Health Insurance',                    amount:-86.08,  cat:'Health'},
+  {id:'cb-j4',  account:'commbank',      date:'2026-01-07', desc:'Overdraw Fee',                            amount:-15.00,  cat:'Bank Fees'},
+  {id:'cb-j5',  account:'commbank',      date:'2026-01-08', desc:'Sparro Wages (reimbursement)',            amount: 50.00,  cat:'Salary'},
+  {id:'cb-j6',  account:'commbank',      date:'2026-01-09', desc:'MEDIBANK PRIVATE',                        amount:-36.90,  cat:'Health'},
+  {id:'cb-j7',  account:'commbank',      date:'2026-01-09', desc:'Transfer To Y LI (Workshop)',             amount:-35.00,  cat:'Personal'},
+  {id:'cb-j8',  account:'commbank',      date:'2026-01-12', desc:'Maeve Wong (credit)',                     amount: 17.00,  cat:'Other Income'},
+  {id:'cb-j9',  account:'commbank',      date:'2026-01-12', desc:'CANVA Subscription',                      amount:-17.99,  cat:'Subscriptions'},
+  {id:'cb-j10', account:'commbank',      date:'2026-01-13', desc:'APPLE.COM/BILL',                          amount: -4.49,  cat:'Subscriptions'},
+  {id:'cb-j11', account:'commbank',      date:'2026-01-13', desc:'Salary — Sparro Wages',                   amount:5297.67, cat:'Salary'},
+  {id:'cb-j12', account:'commbank',      date:'2026-01-15', desc:'MIRO.COM',                                amount:-34.99,  cat:'Subscriptions'},
+  {id:'cb-j13', account:'commbank',      date:'2026-01-15', desc:'International Transaction Fee',           amount: -1.22,  cat:'Bank Fees'},
+  {id:'cb-j14', account:'commbank',      date:'2026-01-23', desc:'DANCEKOOL STUDIO',                        amount:-30.60,  cat:'Health'},
+  {id:'cb-j15', account:'commbank',      date:'2026-01-25', desc:'MISS BK PTY LTD (Supplements)',           amount:-354.50, cat:'Health'},
+  // Westpac Saving January
+  {id:'wps-j1', account:'westpac-save',  date:'2026-01-02', desc:'Westpac Life payment (review needed)',    amount:-778.00, cat:'Bills', needsReview:true},
+  {id:'wps-j2', account:'westpac-save',  date:'2026-01-02', desc:'Rent Payment',                           amount:-680.00, cat:'Rent'},
+  {id:'wps-j3', account:'westpac-save',  date:'2026-01-27', desc:'Rent Payment',                           amount:-680.00, cat:'Rent'},
+  {id:'wps-j4', account:'westpac-save',  date:'2026-01-30', desc:'Savings Interest (incl. bonus $254.54)', amount: 260.67, cat:'Interest'},
+  // Westpac Spend January
+  {id:'wsp-j1', account:'westpac-spend', date:'2026-01-07', desc:'CROSSOVER DANCE STUDIO',                 amount:-26.00,  cat:'Health'},
+  {id:'wsp-j2', account:'westpac-spend', date:'2026-01-08', desc:'Spago Darling Square',                   amount:-34.51,  cat:'Dining'},
+  {id:'wsp-j3', account:'westpac-spend', date:'2026-01-09', desc:'GROUND ENTERPRISE PTY',                  amount: -7.29,  cat:'Dining'},
+  {id:'wsp-j4', account:'westpac-spend', date:'2026-01-09', desc:'A RAMOS (payment)',                      amount:-15.00,  cat:'Personal'},
+  {id:'wsp-j5', account:'westpac-spend', date:'2026-01-14', desc:'SQ *IX DANCE STUDIO',                    amount: -5.05,  cat:'Health'},
+  {id:'wsp-j6', account:'westpac-spend', date:'2026-01-16', desc:'SQ *DANCEKOOL PTY LTD',                  amount: -6.10,  cat:'Health'},
+  {id:'wsp-j7', account:'westpac-spend', date:'2026-01-22', desc:'CROSSOVER DANCE STUDIO',                 amount:-26.00,  cat:'Health'},
+  {id:'wsp-j8', account:'westpac-spend', date:'2026-01-22', desc:'FISHBO* THE DARLIN (Fishbowl)',          amount:-15.40,  cat:'Dining'},
+  {id:'wsp-j9', account:'westpac-spend', date:'2026-01-23', desc:'SQ *DANCEKOOL PTY LTD',                  amount: -6.10,  cat:'Health'},
+  {id:'wsp-j10',account:'westpac-spend', date:'2026-01-27', desc:'SQ *SINERGI.IO',                         amount: -6.00,  cat:'Entertainment'},
+  {id:'wsp-j11',account:'westpac-spend', date:'2026-01-27', desc:'HungryPanda AU',                         amount: -9.06,  cat:'Dining'},
+  {id:'wsp-j12',account:'westpac-spend', date:'2026-01-30', desc:'DARLING PAVILION SYDNEY',                amount:-20.24,  cat:'Dining'},
+  {id:'wsp-j13',account:'westpac-spend', date:'2026-01-30', desc:'TICKETS*RONALD',                         amount:-37.63,  cat:'Entertainment'},
+  // CommBank February
+  {id:'cb-f1',  account:'commbank',      date:'2026-02-01', desc:'Debit Excess Interest',                  amount: -0.07,  cat:'Bank Fees'},
+  {id:'cb-f2',  account:'commbank',      date:'2026-02-03', desc:'APPLE.COM/BILL',                          amount:-22.99,  cat:'Subscriptions'},
+  {id:'cb-f3',  account:'commbank',      date:'2026-02-03', desc:'SHADOWSOCKS SERVICE',                    amount:-28.63,  cat:'Subscriptions'},
+  {id:'cb-f4',  account:'commbank',      date:'2026-02-04', desc:'DANCEKOOL STUDIO',                        amount:-30.60,  cat:'Health'},
+  {id:'cb-f5',  account:'commbank',      date:'2026-02-04', desc:'Transfer To Momoka Nogita',              amount:-35.00,  cat:'Personal'},
+  {id:'cb-f6',  account:'commbank',      date:'2026-02-05', desc:'Sparro Wages (reimbursement)',            amount: 20.24,  cat:'Salary'},
+  {id:'cb-f7',  account:'commbank',      date:'2026-02-06', desc:'MIRO.COM',                                amount:-31.73,  cat:'Subscriptions'},
+  {id:'cb-f8',  account:'commbank',      date:'2026-02-06', desc:'International Transaction Fee',           amount: -1.11,  cat:'Bank Fees'},
+  {id:'cb-f9',  account:'commbank',      date:'2026-02-06', desc:'NIB Health Insurance',                    amount:-86.08,  cat:'Health'},
+  {id:'cb-f10', account:'commbank',      date:'2026-02-07', desc:'Return — Sydney Opera House',            amount: 20.00,  cat:'Other Income'},
+  {id:'cb-f11', account:'commbank',      date:'2026-02-07', desc:'RENDER.COM',                              amount: -6.19,  cat:'Subscriptions'},
+  {id:'cb-f12', account:'commbank',      date:'2026-02-07', desc:'International Transaction Fee',           amount: -0.22,  cat:'Bank Fees'},
+  {id:'cb-f13', account:'commbank',      date:'2026-02-09', desc:'MEDIBANK PRIVATE',                        amount:-36.90,  cat:'Health'},
+  {id:'cb-f14', account:'commbank',      date:'2026-02-10', desc:'APPLE.COM/BILL',                          amount: -4.49,  cat:'Subscriptions'},
+  {id:'cb-f15', account:'commbank',      date:'2026-02-10', desc:'Overdraw Fee',                            amount:-15.00,  cat:'Bank Fees'},
+  {id:'cb-f16', account:'commbank',      date:'2026-02-12', desc:'Salary — Sparro Wages',                   amount:5297.66, cat:'Salary'},
+  {id:'cb-f17', account:'commbank',      date:'2026-02-17', desc:'SUPERULTRA, INC.',                        amount:-11.99,  cat:'Subscriptions'},
+  {id:'cb-f18', account:'commbank',      date:'2026-02-17', desc:'International Transaction Fee',           amount: -0.42,  cat:'Bank Fees'},
+  // Westpac Saving February
+  {id:'wps-f1', account:'westpac-save',  date:'2026-02-09', desc:'Rent Payment',                           amount:-680.00, cat:'Rent'},
+  {id:'wps-f2', account:'westpac-save',  date:'2026-02-27', desc:'Savings Interest (incl. bonus $249.58)', amount: 255.41, cat:'Interest'},
+  // Westpac Spend February
+  {id:'wsp-f1', account:'westpac-spend', date:'2026-02-04', desc:'DATA PLAN WANCHAI HKG (HK SIM)',         amount:-74.11,  cat:'Subscriptions'},
+];
+
+// ═══════════════════════════════════════════════
+// FAMILY AMEX SEED DATA
+// ═══════════════════════════════════════════════
+const FAMILY_SEED = [
+  // AMEX January
+  {id:'ax-j1',  date:'2026-01-01', desc:'COLES ONLINE',               member:'W LI',   amount:54.04,   cat:'Groceries'},
+  {id:'ax-j2',  date:'2026-01-01', desc:'UBER TRIP',                  member:'Z XING', amount:57.94,   cat:'Transport'},
+  {id:'ax-j3',  date:'2026-01-02', desc:'MYER PTY LTD',               member:'W LI',   amount:63.95,   cat:'Shopping'},
+  {id:'ax-j4',  date:'2026-01-02', desc:'UMALL',                      member:'Z XING', amount:91.05,   cat:'Shopping'},
+  {id:'ax-j5',  date:'2026-01-02', desc:'VILLAGE CONVENIENCE EVO',    member:'W LI',   amount:5.06,    cat:'Groceries'},
+  {id:'ax-j6',  date:'2026-01-03', desc:'UMALL',                      member:'Z XING', amount:3.34,    cat:'Shopping'},
+  {id:'ax-j7',  date:'2026-01-05', desc:'SUPERLOOP BROADBAND',        member:'Z XING', amount:35.00,   cat:'Internet'},
+  {id:'ax-j8',  date:'2026-01-06', desc:'ROMEOS SUPA IGA',            member:'Z XING', amount:23.23,   cat:'Groceries'},
+  {id:'ax-j9',  date:'2026-01-07', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:8.98,    cat:'Transport'},
+  {id:'ax-j10', date:'2026-01-07', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-j11', date:'2026-01-08', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:7.63,    cat:'Transport'},
+  {id:'ax-j12', date:'2026-01-08', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-j13', date:'2026-01-08', desc:'WW METRO HAYMARKET',         member:'W LI',   amount:3.50,    cat:'Groceries'},
+  {id:'ax-j14', date:'2026-01-09', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.17,    cat:'Transport'},
+  {id:'ax-j15', date:'2026-01-09', desc:'WOOLWORTHS TOWN HALL',       member:'W LI',   amount:26.73,   cat:'Groceries'},
+  {id:'ax-j16', date:'2026-01-10', desc:'UMALL',                      member:'Z XING', amount:88.18,   cat:'Shopping'},
+  {id:'ax-j17', date:'2026-01-12', desc:'IGA QUAY QUARTER',           member:'Z XING', amount:2.95,    cat:'Groceries'},
+  {id:'ax-j18', date:'2026-01-12', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:13.69,   cat:'Transport'},
+  {id:'ax-j19', date:'2026-01-13', desc:'SUPERLOOP BROADBAND',        member:'Z XING', amount:103.23,  cat:'Internet'},
+  {id:'ax-j20', date:'2026-01-13', desc:'VILLAGE CONVENIENCE EVO',    member:'W LI',   amount:5.06,    cat:'Groceries'},
+  {id:'ax-j21', date:'2026-01-14', desc:'IGA QUAY QUARTER',           member:'Z XING', amount:9.49,    cat:'Groceries'},
+  {id:'ax-j22', date:'2026-01-14', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:7.36,    cat:'Transport'},
+  {id:'ax-j23', date:'2026-01-14', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:12.01,   cat:'Transport'},
+  {id:'ax-j24', date:'2026-01-15', desc:'FISHBOWL CHIFLEY SQ',        member:'Z XING', amount:14.40,   cat:'Dining'},
+  {id:'ax-j25', date:'2026-01-15', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.06,    cat:'Transport'},
+  {id:'ax-j26', date:'2026-01-15', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:7.36,    cat:'Transport'},
+  {id:'ax-j27', date:'2026-01-16', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.28,    cat:'Transport'},
+  {id:'ax-j28', date:'2026-01-16', desc:'UMALL',                      member:'Z XING', amount:110.50,  cat:'Shopping'},
+  {id:'ax-j29', date:'2026-01-18', desc:'NIB HEALTH FUNDS',           member:'Z XING', amount:80.35,   cat:'Health'},
+  {id:'ax-j30', date:'2026-01-18', desc:'ROMEOS SUPA IGA',            member:'Z XING', amount:17.15,   cat:'Groceries'},
+  {id:'ax-j31', date:'2026-01-18', desc:'VILLAGE CONVENIENCE EVO',    member:'W LI',   amount:7.09,    cat:'Groceries'},
+  {id:'ax-j32', date:'2026-01-19', desc:'IGA QUAY QUARTER',           member:'Z XING', amount:4.75,    cat:'Groceries'},
+  {id:'ax-j33', date:'2026-01-19', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-j34', date:'2026-01-21', desc:'CLASSPASS* MONTHLY',         member:'W LI',   amount:74.00,   cat:'Health'},
+  {id:'ax-j35', date:'2026-01-21', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:7.52,    cat:'Transport'},
+  {id:'ax-j36', date:'2026-01-21', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-j37', date:'2026-01-21', desc:'WOOLWORTHS TOWN HALL',       member:'W LI',   amount:8.20,    cat:'Groceries'},
+  {id:'ax-j38', date:'2026-01-22', desc:'SPOTIFY',                    member:'W LI',   amount:15.99,   cat:'Subscriptions'},
+  {id:'ax-j39', date:'2026-01-22', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:7.52,    cat:'Transport'},
+  {id:'ax-j40', date:'2026-01-22', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-j41', date:'2026-01-22', desc:'WW METRO HAYMARKET',         member:'W LI',   amount:8.00,    cat:'Groceries'},
+  {id:'ax-j42', date:'2026-01-23', desc:'APPLE.COM/BILL',             member:'Z XING', amount:4.49,    cat:'Subscriptions'},
+  {id:'ax-j43', date:'2026-01-23', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.06,    cat:'Transport'},
+  {id:'ax-j44', date:'2026-01-23', desc:'UMALL',                      member:'Z XING', amount:107.83,  cat:'Shopping'},
+  {id:'ax-j45', date:'2026-01-24', desc:'CLAUDE.AI SUBSCRIPTION',     member:'W LI',   amount:34.00,   cat:'Subscriptions'},
+  {id:'ax-j46', date:'2026-01-24', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.28,    cat:'Transport'},
+  {id:'ax-j47', date:'2026-01-25', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.06,    cat:'Transport'},
+  {id:'ax-j48', date:'2026-01-27', desc:'COLES ONLINE',               member:'W LI',   amount:19.00,   cat:'Groceries'},
+  {id:'ax-j49', date:'2026-01-27', desc:'NETFLIX AUSTRALIA',          member:'Z XING', amount:28.99,   cat:'Subscriptions'},
+  {id:'ax-j50', date:'2026-01-27', desc:'OPENAI *CHATGPT SUBSCR',    member:'W LI',   amount:32.81,   cat:'Subscriptions'},
+  {id:'ax-j51', date:'2026-01-27', desc:'SUPERLOOP BROADBAND',        member:'Z XING', amount:35.00,   cat:'Internet'},
+  {id:'ax-j52', date:'2026-01-27', desc:'TM *TICKETMASTER',           member:'W LI',   amount:439.93,  cat:'Entertainment'},
+  {id:'ax-j53', date:'2026-01-27', desc:'WOOLWORTHS ONLINE',          member:'W LI',   amount:127.00,  cat:'Groceries'},
+  {id:'ax-j54', date:'2026-01-28', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:7.52,    cat:'Transport'},
+  {id:'ax-j55', date:'2026-01-29', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:7.36,    cat:'Transport'},
+  {id:'ax-j56', date:'2026-01-30', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.17,    cat:'Transport'},
+  {id:'ax-j57', date:'2026-01-30', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:6.28,    cat:'Transport'},
+  {id:'ax-j58', date:'2026-01-31', desc:'CAFFE LEV PTY LTD',          member:'Z XING', amount:79.35,   cat:'Dining'},
+  {id:'ax-j59', date:'2026-01-31', desc:'LUNEBURGER QVB',             member:'W LI',   amount:5.56,    cat:'Dining'},
+  {id:'ax-j60', date:'2026-01-31', desc:'MITCHELL-Y PTY LTD',         member:'Z XING', amount:204.10,  cat:'Shopping'},
+  {id:'ax-j61', date:'2026-01-31', desc:'THAI KEE IGA SUPERMARKET',   member:'Z XING', amount:25.90,   cat:'Groceries'},
+  {id:'ax-j62', date:'2026-01-31', desc:'THE UGG SHOP 253 PITT ST',   member:'Z XING', amount:116.00,  cat:'Shopping'},
+  {id:'ax-j63', date:'2026-01-31', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:9.65,    cat:'Transport'},
+  {id:'ax-j64', date:'2026-01-31', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:9.65,    cat:'Transport'},
+  {id:'ax-j65', date:'2026-01-31', desc:'WIN KEE BUTCHERY',           member:'Z XING', amount:8.57,    cat:'Groceries'},
+  {id:'ax-j66', date:'2026-01-31', desc:'WOOLWORTHS TOWN HALL',       member:'Z XING', amount:44.40,   cat:'Groceries'},
+  // AMEX February
+  {id:'ax-f1',  date:'2026-02-01', desc:'COLES ONLINE',               member:'W LI',   amount:269.55,  cat:'Groceries'},
+  {id:'ax-f2',  date:'2026-02-01', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.06,    cat:'Transport'},
+  {id:'ax-f3',  date:'2026-02-02', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-f4',  date:'2026-02-03', desc:'SUPERLOOP BROADBAND',        member:'Z XING', amount:35.00,   cat:'Internet'},
+  {id:'ax-f5',  date:'2026-02-03', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:8.98,    cat:'Transport'},
+  {id:'ax-f6',  date:'2026-02-03', desc:'WW METRO HAYMARKET',         member:'W LI',   amount:2.00,    cat:'Groceries'},
+  {id:'ax-f7',  date:'2026-02-04', desc:'CHEMIST WAREHOUSE',          member:'Z XING', amount:19.99,   cat:'Health'},
+  {id:'ax-f8',  date:'2026-02-04', desc:'IGA QUAY QUARTER',           member:'Z XING', amount:29.01,   cat:'Groceries'},
+  {id:'ax-f9',  date:'2026-02-04', desc:'ORIGINAL UGG AUSTRALI',      member:'Z XING', amount:60.00,   cat:'Shopping'},
+  {id:'ax-f10', date:'2026-02-04', desc:'TRANSPORTFORNSWTRAVEL',      member:'W LI',   amount:6.17,    cat:'Transport'},
+  {id:'ax-f11', date:'2026-02-04', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:14.99,   cat:'Transport'},
+  {id:'ax-f12', date:'2026-02-05', desc:'FISHBOWL WINTERGARDEN',      member:'Z XING', amount:14.40,   cat:'Dining'},
+  {id:'ax-f13', date:'2026-02-05', desc:'TRANSPORTFORNSWTRAVEL',      member:'Z XING', amount:8.66,    cat:'Transport'},
+  {id:'ax-f14', date:'2026-02-07', desc:'KITCHEN BY MIKE SYD AIRPORT',member:'W LI',   amount:17.47,   cat:'Dining'},
+  {id:'ax-f15', date:'2026-02-07', desc:'UBER TRIP',                  member:'Z XING', amount:45.96,   cat:'Transport'},
+  {id:'ax-f16', date:'2026-02-11', desc:'SUPERLOOP BROADBAND',        member:'Z XING', amount:103.23,  cat:'Internet'},
+  {id:'ax-f17', date:'2026-02-18', desc:'NIB HEALTH FUNDS',           member:'Z XING', amount:80.35,   cat:'Health'},
+  {id:'ax-f18', date:'2026-02-21', desc:'CLASSPASS* MONTHLY',         member:'W LI',   amount:74.00,   cat:'Health'},
+  {id:'ax-f19', date:'2026-02-22', desc:'SPOTIFY',                    member:'W LI',   amount:15.99,   cat:'Subscriptions'},
+  {id:'ax-f20', date:'2026-02-24', desc:'CLAUDE.AI SUBSCRIPTION',     member:'W LI',   amount:34.00,   cat:'Subscriptions'},
+  {id:'ax-f21', date:'2026-02-26', desc:'SUPERLOOP BROADBAND',        member:'Z XING', amount:35.00,   cat:'Internet'},
+  {id:'ax-f22', date:'2026-02-27', desc:'COLES ONLINE',               member:'W LI',   amount:19.00,   cat:'Groceries'},
+  {id:'ax-f23', date:'2026-02-27', desc:'NETFLIX.COM',                member:'Z XING', amount:28.99,   cat:'Subscriptions'},
+  {id:'ax-f24', date:'2026-02-27', desc:'OPENAI *CHATGPT SUBSCR',    member:'W LI',   amount:32.07,   cat:'Subscriptions'},
+];
+
+// ═══════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════
+const PLAN_DEFAULT = {
+  tripContributions: [
+    { year: 2026, month: 1, wanting: 200, partner: 200 },
+    { year: 2026, month: 2, wanting: 200, partner: 200 },
+  ]
+};
+function loadData() {
+  try {
+    const raw = localStorage.getItem('finance_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (!parsed.categories) parsed.categories = { ...DEFAULT_CAT_COLORS };
+      if (!parsed.plan) parsed.plan = { ...PLAN_DEFAULT, tripContributions: PLAN_DEFAULT.tripContributions.map(c => ({...c})) };
+      return parsed;
+    }
+  } catch(e) {}
+  return {
+    personal: PERSONAL_SEED.map(t => ({...t})),
+    family:   FAMILY_SEED.map(t => ({...t})),
+    settings: { savingsGoalPct: SAVINGS_GOAL_PCT },
+    categories: { ...DEFAULT_CAT_COLORS },
+    plan: { ...PLAN_DEFAULT, tripContributions: PLAN_DEFAULT.tripContributions.map(c => ({...c})) },
+  };
+}
+function saveData() { localStorage.setItem('finance_v1', JSON.stringify(DB)); }
+let DB = loadData();
+
+// ═══════════════════════════════════════════════
+// CATEGORY HELPERS
+// ═══════════════════════════════════════════════
+function getAllExpCats()        { return Object.keys(DB.categories).filter(c => !INCOME_CATS.has(c)); }
+function getAllCatsWithIncome() { return [...INCOME_CATS, ...getAllExpCats()]; }
+function catColor(cat)         { return DB.categories[cat] || '#475569'; }
+
+// ═══════════════════════════════════════════════
+// FORMAT HELPERS
+// ═══════════════════════════════════════════════
+function parseYM(dateStr) {
+  const d = new Date(dateStr);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
+}
+function fmt(n) {
+  return '$' + Math.abs(n).toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtSigned(n) {
+  const s = '$' + Math.abs(n).toLocaleString('en-AU', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return n >= 0 ? '+' + s : '-' + s;
+}
+function monthName(year, month) { return MONTHS[month-1] + ' ' + year; }
+
+// ═══════════════════════════════════════════════
+// CATEGORY MANAGEMENT
+// ═══════════════════════════════════════════════
+let selectedSwatch = SWATCH_COLORS[0];
+let catManageList = [];
+
+function openCatModal() {
+  renderCatManageList();
+  renderSwatches();
+  document.getElementById('cat-modal').classList.add('open');
+}
+function closeCatModal() {
+  document.getElementById('cat-modal').classList.remove('open');
+  rerender();
+}
+function renderCatManageList() {
+  catManageList = getAllExpCats();
+  const el = document.getElementById('cat-manage-list');
+  if (!catManageList.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No categories yet.</p>'; return; }
+  el.innerHTML = catManageList.map((cat, i) =>
+    `<div class="cat-manage-row" id="cmrow-${i}">
+      <div class="cat-manage-swatch" style="background:${catColor(cat)}"></div>
+      <div class="cat-manage-name">${cat}</div>
+      <div class="cat-manage-actions">
+        <button class="btn-sm" onclick="startRename(${i})">Rename</button>
+        <button class="btn-sm danger" onclick="deleteCategory(${i})">Delete</button>
+      </div>
+    </div>`
+  ).join('');
+}
+function renderSwatches() {
+  document.getElementById('color-swatches').innerHTML = SWATCH_COLORS.map(c =>
+    `<div class="color-swatch ${c===selectedSwatch?'selected':''}" style="background:${c}" onclick="pickSwatch('${c}')"></div>`
+  ).join('');
+}
+function pickSwatch(c) { selectedSwatch = c; renderSwatches(); }
+function startRename(i) {
+  const cat = catManageList[i];
+  const row = document.getElementById(`cmrow-${i}`);
+  row.innerHTML = `
+    <div class="cat-manage-swatch" style="background:${catColor(cat)}"></div>
+    <input class="cat-rename-input" id="rname-${i}" value="${cat}" maxlength="30">
+    <div class="cat-manage-actions">
+      <button class="btn-sm confirm" onclick="confirmRename(${i},'${cat}')">Save</button>
+      <button class="btn-sm" onclick="renderCatManageList()">Cancel</button>
+    </div>`;
+  document.getElementById(`rname-${i}`).focus();
+}
+function confirmRename(i, oldCat) {
+  const newCat = document.getElementById(`rname-${i}`).value.trim();
+  if (!newCat || newCat === oldCat) { renderCatManageList(); return; }
+  if (DB.categories[newCat]) { alert(`"${newCat}" already exists.`); return; }
+  const color = DB.categories[oldCat];
+  delete DB.categories[oldCat];
+  DB.categories[newCat] = color;
+  DB.personal.forEach(t => { if (t.cat === oldCat) t.cat = newCat; });
+  DB.family.forEach(t => { if (t.cat === oldCat) t.cat = newCat; });
+  saveData();
+  renderCatManageList();
+}
+function deleteCategory(i) {
+  const cat = catManageList[i];
+  if (cat === 'Other') { alert("Can't delete the 'Other' fallback category."); return; }
+  const n = DB.personal.filter(t => t.cat === cat).length + DB.family.filter(t => t.cat === cat).length;
+  if (n > 0 && !confirm(`Delete "${cat}"? ${n} transaction${n>1?'s':''} will be moved to "Other".`)) return;
+  DB.personal.forEach(t => { if (t.cat === cat) t.cat = 'Other'; });
+  DB.family.forEach(t => { if (t.cat === cat) t.cat = 'Other'; });
+  delete DB.categories[cat];
+  saveData();
+  renderCatManageList();
+}
+function addCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  if (!name) return;
+  if (DB.categories[name]) { alert(`"${name}" already exists.`); return; }
+  DB.categories[name] = selectedSwatch;
+  saveData();
+  document.getElementById('new-cat-name').value = '';
+  renderCatManageList();
+}
+
+// ═══════════════════════════════════════════════
+// PDF / XLSX PARSING
+// ═══════════════════════════════════════════════
+function groupIntoRows(items, tol = 3) {
+  const sorted = [...items].sort((a, b) => a.transform[5] - b.transform[5]);
+  const rows = [];
+  for (const item of sorted) {
+    const y = item.transform[5];
+    const row = rows.find(r => Math.abs(r.y - y) <= tol);
+    if (row) row.items.push(item);
+    else rows.push({ y, items: [item] });
+  }
+  rows.sort((a, b) => b.y - a.y);
+  rows.forEach(r => r.items.sort((a, b) => a.transform[4] - b.transform[4]));
+  return rows;
+}
+
+const MON = { JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12 };
+function bankDateToISO(str) {
+  const m = str.match(/(\d{1,2})\s+([A-Z]{3})\s+(\d{4})/i);
+  if (!m) return null;
+  const mo = MON[m[2].toUpperCase()];
+  if (!mo) return null;
+  return `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+}
+
+function autoCategorize(desc) {
+  for (const rule of AUTO_CAT_RULES) {
+    if (rule.pattern.test(desc)) return rule.cat;
+  }
+  return null;
+}
+
+function isInternalTransfer(desc, account) {
+  if (/transfer (to|from) (westpac|commbank|savings|spend|save)/i.test(desc)) return true;
+  if (account === 'westpac-save' && /transfer (to|from)/i.test(desc) && !/rent/i.test(desc)) return true;
+  return false;
+}
+
+async function parseCommBankPDF(buf) {
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const txs = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const rows = groupIntoRows(content.items);
+    for (const row of rows) {
+      const text = row.items.map(i => i.str).join(' ').trim();
+      const dateMatch = text.match(/^(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
+      if (!dateMatch) continue;
+      const date = bankDateToISO(dateMatch[1]);
+      if (!date) continue;
+      const rest = text.slice(dateMatch[0].length).trim();
+      const amtMatch = rest.match(/([-]?\d[\d,]*\.\d{2})\s*$/);
+      if (!amtMatch) continue;
+      const amount = parseFloat(amtMatch[1].replace(/,/g,''));
+      const desc = rest.slice(0, rest.lastIndexOf(amtMatch[0])).trim();
+      if (isInternalTransfer(desc, 'commbank')) continue;
+      const cat = autoCategorize(desc);
+      const id = 'import-cb-' + date + '-' + Math.abs(amount);
+      txs.push({ id, account: 'commbank', date, desc, amount, cat: cat || 'Other', needsReview: !cat });
+    }
+  }
+  return txs;
+}
+
+async function parseWestpacPDF(buf, accountType) {
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const txs = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const rows = groupIntoRows(content.items);
+    for (const row of rows) {
+      const text = row.items.map(i => i.str).join(' ').trim();
+      const dateMatch = text.match(/^(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
+      if (!dateMatch) continue;
+      const date = bankDateToISO(dateMatch[1]);
+      if (!date) continue;
+      const rest = text.slice(dateMatch[0].length).trim();
+      const amtMatch = rest.match(/([-]?\d[\d,]*\.\d{2})\s*$/);
+      if (!amtMatch) continue;
+      const amount = parseFloat(amtMatch[1].replace(/,/g,''));
+      const desc = rest.slice(0, rest.lastIndexOf(amtMatch[0])).trim();
+      if (isInternalTransfer(desc, accountType)) continue;
+      const cat = autoCategorize(desc);
+      const id = 'import-wp-' + accountType + '-' + date + '-' + Math.abs(amount);
+      txs.push({ id, account: accountType, date, desc, amount, cat: cat || 'Other', needsReview: !cat });
+    }
+  }
+  return txs;
+}
+
+function parseAMEXXLSX(buf) {
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const txs = [];
+  for (const row of rows) {
+    if (!row[0]) continue;
+    const dateStr = String(row[0]).trim();
+    const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!dateMatch) continue;
+    const date = `${dateMatch[3]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`;
+    const desc = String(row[1] || '').trim();
+    const member = String(row[2] || '').trim().toUpperCase().includes('XING') ? 'Z XING' : 'W LI';
+    const rawAmt = parseFloat(String(row[3] || '0').replace(/[,$]/g,''));
+    if (isNaN(rawAmt) || rawAmt === 0) continue;
+    const amount = Math.abs(rawAmt);
+    const cat = autoCategorize(desc);
+    const id = 'import-ax-' + date + '-' + amount;
+    txs.push({ id, date, desc, member, amount, cat: cat || 'Other', needsReview: !cat });
+  }
+  return txs;
+}
+
+// ═══════════════════════════════════════════════
+// UPLOAD MODAL LOGIC
+// ═══════════════════════════════════════════════
+function openUploadModal() { document.getElementById('upload-modal').classList.add('open'); }
+function closeUploadModal() { document.getElementById('upload-modal').classList.remove('open'); }
+function showFileName(labelId, input) {
+  document.getElementById(labelId).textContent = input.files[0]?.name || 'No file selected';
+}
+
+let _pdfJsLoaded = false, _xlsxLoaded = false;
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+async function ensureLibs() {
+  const p = [];
+  if (!_pdfJsLoaded) p.push(loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js').then(() => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    _pdfJsLoaded = true;
+  }));
+  if (!_xlsxLoaded) p.push(loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js').then(() => { _xlsxLoaded = true; }));
+  await Promise.all(p);
+}
+function readBuf(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsArrayBuffer(file);
+  });
+}
+function setUploadStatus(msg, type) {
+  const el = document.getElementById('upload-status');
+  el.textContent = msg;
+  el.className = 'upload-status ' + (type || '');
+}
+async function processUpload() {
+  const year = parseInt(document.getElementById('upload-year').value);
+  const month = parseInt(document.getElementById('upload-month').value);
+  const cbF = document.getElementById('file-commbank').files[0];
+  const wsF = document.getElementById('file-wpsave').files[0];
+  const wtF = document.getElementById('file-wpspend').files[0];
+  const axF = document.getElementById('file-amex').files[0];
+  if (!cbF && !wsF && !wtF && !axF) { setUploadStatus('Select at least one file.', 'error'); return; }
+  const btn = document.getElementById('upload-btn');
+  btn.disabled = true; btn.textContent = 'Processing…';
+  try {
+    await ensureLibs();
+    let pTxs = [], fTxs = [];
+    const inMonth = t => { const ym = parseYM(t.date); return ym.year === year && ym.month === month; };
+    if (cbF) { setUploadStatus('Parsing CommBank…', 'info'); pTxs.push(...(await parseCommBankPDF(await readBuf(cbF))).filter(inMonth)); }
+    if (wsF) { setUploadStatus('Parsing Westpac Saving…', 'info'); pTxs.push(...(await parseWestpacPDF(await readBuf(wsF), 'westpac-save')).filter(inMonth)); }
+    if (wtF) { setUploadStatus('Parsing Westpac Spend…', 'info'); pTxs.push(...(await parseWestpacPDF(await readBuf(wtF), 'westpac-spend')).filter(inMonth)); }
+    if (axF) { setUploadStatus('Parsing AMEX…', 'info'); fTxs.push(...parseAMEXXLSX(await readBuf(axF)).filter(inMonth)); }
+    const ep = DB.personal.filter(inMonth).length, ef = DB.family.filter(inMonth).length;
+    if ((ep > 0 && pTxs.length > 0) || (ef > 0 && fTxs.length > 0)) {
+      if (!confirm(`${MONTHS[month-1]} ${year} already has data. Replace it?`)) { btn.disabled = false; btn.textContent = 'Import'; return; }
+      DB.personal = DB.personal.filter(t => !inMonth(t));
+      DB.family = DB.family.filter(t => !inMonth(t));
+    }
+    DB.personal.push(...pTxs);
+    DB.family.push(...fTxs);
+    saveData();
+    const total = pTxs.length + fTxs.length;
+    const rev = [...pTxs, ...fTxs].filter(t => t.needsReview).length;
+    setUploadStatus(`Imported ${total} transaction${total !== 1 ? 's' : ''}. ${rev > 0 ? rev + ' need review.' : 'All categorised.'}`, 'success');
+    setTimeout(() => { closeUploadModal(); rerender(); }, 1800);
+  } catch(e) {
+    console.error(e);
+    setUploadStatus('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Import';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// DATA COMPUTATIONS
+// ═══════════════════════════════════════════════
+function getPersonalMonth(year, month) {
+  return DB.personal.filter(t => { const ym = parseYM(t.date); return ym.year===year && ym.month===month; });
+}
+function getFamilyMonth(year, month) {
+  return DB.family.filter(t => { const ym = parseYM(t.date); return ym.year===year && ym.month===month; });
+}
+function computePersonalSummary(txs) {
+  let income = 0, expenses = 0;
+  const expByCat = {}, incByCat = {};
+  for (const t of txs) {
+    if (INCOME_CATS.has(t.cat)) {
+      income += t.amount;
+      incByCat[t.cat] = (incByCat[t.cat] || 0) + t.amount;
+    } else {
+      expenses += Math.abs(t.amount);
+      expByCat[t.cat] = (expByCat[t.cat] || 0) + Math.abs(t.amount);
+    }
+  }
+  const savings = income - expenses;
+  const savingsPct = income > 0 ? (savings / income) * 100 : 0;
+  return { income, expenses, savings, savingsPct, expByCat, incByCat };
+}
+function computeFamilySummary(txs) {
+  let total = 0, wli = 0, zxing = 0;
+  const byCat = {}, wliCats = {}, zxingCats = {};
+  for (const t of txs) {
+    total += t.amount;
+    byCat[t.cat] = (byCat[t.cat] || 0) + t.amount;
+    if (t.member === 'W LI') {
+      wli += t.amount;
+      wliCats[t.cat] = (wliCats[t.cat] || 0) + t.amount;
+    } else {
+      zxing += t.amount;
+      zxingCats[t.cat] = (zxingCats[t.cat] || 0) + t.amount;
+    }
+  }
+  return { total, wli, zxing, byCat, wliCats, zxingCats };
+}
+function getPersonalYearlySummary(year) {
+  const monthly = [];
+  let totalIncome = 0, totalExpenses = 0;
+  const yearExpByCat = {}, yearIncByCat = {};
+  for (let m = 1; m <= 12; m++) {
+    const s = computePersonalSummary(getPersonalMonth(year, m));
+    monthly.push(s);
+    totalIncome += s.income;
+    totalExpenses += s.expenses;
+    for (const [c, v] of Object.entries(s.expByCat)) yearExpByCat[c] = (yearExpByCat[c]||0) + v;
+    for (const [c, v] of Object.entries(s.incByCat)) yearIncByCat[c] = (yearIncByCat[c]||0) + v;
+  }
+  const savings = totalIncome - totalExpenses;
+  const savingsPct = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
+  return { totalIncome, totalExpenses, savings, savingsPct, monthly, yearExpByCat, yearIncByCat };
+}
+function getFamilyYearlySummary(year) {
+  const monthly = [];
+  const yearByCat = {};
+  let yearTotal = 0, yearWli = 0, yearZxing = 0;
+  for (let m = 1; m <= 12; m++) {
+    const s = computeFamilySummary(getFamilyMonth(year, m));
+    monthly.push(s);
+    yearTotal += s.total;
+    yearWli += s.wli;
+    yearZxing += s.zxing;
+    for (const [c, v] of Object.entries(s.byCat)) yearByCat[c] = (yearByCat[c]||0) + v;
+  }
+  return { yearTotal, yearWli, yearZxing, monthly, yearByCat };
+}
+
+// ═══════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+const CHART_DEFAULTS = {
+  gridColor: 'rgba(0,0,0,.05)',
+  tickColor: '#6b6878',
+  legendColor: '#6b6878',
+};
+
+function makeBarChart(id, labels, datasets, stacked = false) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: CHART_DEFAULTS.legendColor, font: { size: 11, family: 'IBM Plex Sans' }, boxWidth: 10, padding: 16 } }
+      },
+      scales: {
+        x: { stacked, grid: { color: CHART_DEFAULTS.gridColor }, ticks: { color: CHART_DEFAULTS.tickColor, font: { size: 11 } } },
+        y: { stacked, grid: { color: CHART_DEFAULTS.gridColor }, ticks: { color: CHART_DEFAULTS.tickColor, font: { size: 11 }, callback: v => '$' + v.toLocaleString() } },
+      },
+    },
+  });
+}
+function makeDonutChart(id, labels, data, colors) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#f0eff4', borderWidth: 2 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '64%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` } },
+      },
+    },
+  });
+}
+function makePieChart(id, labels, data, colors) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type: 'pie',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#f0eff4', borderWidth: 2 }] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed)}` } },
+      },
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SHARED RENDERERS
+// ═══════════════════════════════════════════════
+function renderCatList(containerId, byCat) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+  const total = sorted.reduce((s,[,v]) => s+v, 0);
+  if (!sorted.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No data</p>'; return; }
+  el.innerHTML = sorted.map(([cat, amt]) => {
+    const pct = total > 0 ? (amt/total*100).toFixed(0) : 0;
+    const color = catColor(cat);
+    return `<div class="cat-row">
+      <div class="cat-dot" style="background:${color}"></div>
+      <div class="cat-name">${cat}</div>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="cat-amount">${fmt(amt)}</div>
+      <div class="cat-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+function renderIncomeBreakdown(containerId, incByCat, totalIncome) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const sorted = Object.entries(incByCat).sort((a,b) => b[1]-a[1]);
+  if (!sorted.length) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = `
+    <span class="section-title" style="margin-bottom:12px">Income Sources</span>
+    ${sorted.map(([cat, amt]) => {
+      const pct = totalIncome > 0 ? (amt/totalIncome*100).toFixed(0) : 0;
+      return `<div class="income-row">
+        <div class="income-source">${cat}</div>
+        <div class="income-bar-wrap"><div class="income-bar-fill" style="width:${pct}%"></div></div>
+        <div class="income-amount">${fmt(amt)}</div>
+        <div class="income-pct">${pct}%</div>
+      </div>`;
+    }).join('')}`;
+}
+function renderPersonBreakdown(txs) {
+  const el = document.getElementById('family-person-breakdown');
+  if (!el) return;
+  const wliCats = {}, zxingCats = {};
+  let wliTotal = 0, zxingTotal = 0;
+  for (const t of txs) {
+    if (t.member === 'W LI') { wliCats[t.cat] = (wliCats[t.cat]||0) + t.amount; wliTotal += t.amount; }
+    else { zxingCats[t.cat] = (zxingCats[t.cat]||0) + t.amount; zxingTotal += t.amount; }
+  }
+  function personCatRows(byCat, total) {
+    const sorted = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+    if (!sorted.length) return '<p style="color:var(--muted);font-size:13px">No transactions</p>';
+    return sorted.map(([cat, amt]) => {
+      const pct = total > 0 ? (amt/total*100).toFixed(0) : 0;
+      const color = catColor(cat);
+      return `<div class="cat-row">
+        <div class="cat-dot" style="background:${color}"></div>
+        <div class="cat-name">${cat}</div>
+        <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="cat-amount">${fmt(amt)}</div>
+        <div class="cat-pct">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = `
+    <div class="person-card">
+      <div class="person-card-header">
+        <span class="person-badge wli">W LI</span>
+        <span class="person-total wli">${fmt(wliTotal)}</span>
+      </div>
+      <div class="cat-list">${personCatRows(wliCats, wliTotal)}</div>
+    </div>
+    <div class="person-card">
+      <div class="person-card-header">
+        <span class="person-badge zxing">Z XING</span>
+        <span class="person-total zxing">${fmt(zxingTotal)}</span>
+      </div>
+      <div class="cat-list">${personCatRows(zxingCats, zxingTotal)}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER: PERSONAL YEARLY
+// ═══════════════════════════════════════════════
+function renderPersonalYearly() {
+  const ys = getPersonalYearlySummary(2026);
+  const goal = DB.settings.savingsGoalPct;
+  const goalClass = ys.savingsPct >= goal ? 'green' : ys.savingsPct >= goal*0.7 ? 'blue' : 'red';
+  document.getElementById('personal-yearly-cards').innerHTML = `
+    <div class="card income">
+      <div class="card-label">Total Income</div>
+      <div class="card-value green">${fmt(ys.totalIncome)}</div>
+      <div class="card-sub">Jan – Feb 2026</div>
+    </div>
+    <div class="card expense">
+      <div class="card-label">Total Expenses</div>
+      <div class="card-value red">${fmt(ys.totalExpenses)}</div>
+      <div class="card-sub">Excluding internal transfers</div>
+    </div>
+    <div class="card savings">
+      <div class="card-label">Total Savings</div>
+      <div class="card-value blue">${fmt(ys.savings)}</div>
+      <div class="card-sub">Income minus expenses</div>
+    </div>
+    <div class="card goal">
+      <div class="card-label">Savings Rate</div>
+      <div class="card-value ${goalClass}">${ys.savingsPct.toFixed(1)}%</div>
+      <div class="card-sub">Goal: ${goal}%</div>
+      <div class="goal-bar"><div class="goal-fill" style="width:${Math.min(ys.savingsPct,100).toFixed(1)}%;background:${ys.savingsPct>=goal?'var(--green)':'var(--blue)'}"></div></div>
+    </div>`;
+  renderIncomeBreakdown('personal-yearly-income-breakdown', ys.yearIncByCat, ys.totalIncome);
+  makeBarChart('chart-yearly-bar', MONTHS, [
+    { label: 'Income',   data: ys.monthly.map(m => m.income.toFixed(2)),              backgroundColor: 'rgba(5,150,105,.7)',   borderRadius: 4 },
+    { label: 'Expenses', data: ys.monthly.map(m => m.expenses.toFixed(2)),            backgroundColor: 'rgba(220,38,38,.7)',   borderRadius: 4 },
+    { label: 'Savings',  data: ys.monthly.map(m => Math.max(0,m.savings).toFixed(2)), backgroundColor: 'rgba(37,99,235,.7)',   borderRadius: 4 },
+  ], false);
+  const expEntries = Object.entries(ys.yearExpByCat).sort((a,b)=>b[1]-a[1]);
+  makeDonutChart('chart-yearly-donut', expEntries.map(([c])=>c), expEntries.map(([,v])=>v), expEntries.map(([c])=>catColor(c)));
+  renderCatList('personal-yearly-cats', ys.yearExpByCat);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER: PERSONAL MONTHLY
+// ═══════════════════════════════════════════════
+function renderPersonalMonthly() {
+  const { year, month } = state.personalMonth;
+  const txs = getPersonalMonth(year, month);
+  const s = computePersonalSummary(txs);
+  const goal = DB.settings.savingsGoalPct;
+
+  document.getElementById('personal-month-label').textContent = monthName(year, month);
+  document.getElementById('personal-prev').disabled = month <= 1;
+  document.getElementById('personal-next').disabled = month >= 12;
+
+  const goalClass = s.savingsPct >= goal ? 'green' : s.savingsPct >= goal*0.7 ? 'blue' : 'red';
+  document.getElementById('personal-monthly-cards').innerHTML = `
+    <div class="card income">
+      <div class="card-label">Income</div>
+      <div class="card-value green">${fmt(s.income)}</div>
+      <div class="card-sub">${Object.keys(s.incByCat).length} source${Object.keys(s.incByCat).length!==1?'s':''}</div>
+    </div>
+    <div class="card expense">
+      <div class="card-label">Expenses</div>
+      <div class="card-value red">${fmt(s.expenses)}</div>
+      <div class="card-sub">${Object.keys(s.expByCat).length} categories</div>
+    </div>
+    <div class="card savings">
+      <div class="card-label">Savings</div>
+      <div class="card-value blue">${fmt(Math.max(0,s.savings))}</div>
+      <div class="card-sub">Income − Expenses</div>
+    </div>
+    <div class="card goal">
+      <div class="card-label">Savings Rate</div>
+      <div class="card-value ${goalClass}">${s.savingsPct.toFixed(1)}%</div>
+      <div class="card-sub">Goal: ${goal}%</div>
+      <div class="goal-bar"><div class="goal-fill" style="width:${Math.min(s.savingsPct,100).toFixed(1)}%;background:${s.savingsPct>=goal?'var(--green)':'var(--blue)'}"></div></div>
+    </div>`;
+
+  renderIncomeBreakdown('personal-monthly-income-breakdown', s.incByCat, s.income);
+  renderPersonalInsights(year, month, s);
+
+  const expEntries = Object.entries(s.expByCat).sort((a,b)=>b[1]-a[1]);
+  makePieChart('chart-monthly-pie', expEntries.map(([c])=>c), expEntries.map(([,v])=>v), expEntries.map(([c])=>catColor(c)));
+  renderCatList('personal-monthly-cats', s.expByCat);
+
+  // Populate category filter dropdown
+  const catFilter = document.getElementById('personal-cat-filter');
+  if (catFilter) {
+    const currentVal = state.personalFilter.category;
+    const cats = [...new Set(txs.map(t => t.cat))].sort();
+    catFilter.innerHTML = `<option value="all">All Categories</option>` +
+      cats.map(c => `<option value="${c}" ${currentVal===c?'selected':''}>${c}</option>`).join('');
+  }
+
+  renderPersonalTxTable();
+
+  const reviewCount = DB.personal.filter(t => t.needsReview).length;
+  const banner = document.getElementById('review-banner');
+  if (reviewCount > 0) {
+    banner.classList.add('visible');
+    document.getElementById('review-count').textContent = `${reviewCount} transaction${reviewCount>1?'s':''} need${reviewCount===1?'s':''} your review`;
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// PERSONAL TX TABLE (separated for filter updates)
+// ═══════════════════════════════════════════════
+function renderPersonalTxTable() {
+  const { year, month } = state.personalMonth;
+  const allTxs = getPersonalMonth(year, month);
+  let filtered = allTxs;
+  if (state.personalFilter.account !== 'all') {
+    filtered = filtered.filter(t => t.account === state.personalFilter.account);
+  }
+  if (state.personalFilter.category !== 'all') {
+    filtered = filtered.filter(t => t.cat === state.personalFilter.category);
+  }
+  const sorted = [...filtered].sort((a,b) => a.date.localeCompare(b.date));
+  const countEl = document.getElementById('personal-tx-count');
+  if (countEl) countEl.textContent = filtered.length === allTxs.length
+    ? `${allTxs.length} transactions`
+    : `showing ${filtered.length} of ${allTxs.length} transactions`;
+  const tbody = document.getElementById('personal-tx-body');
+  if (!tbody) return;
+  tbody.innerHTML = sorted.map(t => {
+    const sign = t.amount >= 0 ? 'income' : 'expense';
+    const acctLabel = { commbank: 'CommBank', 'westpac-save': 'Westpac Saving', 'westpac-spend': 'Westpac Spend' }[t.account] || t.account;
+    const reviewBadge = t.needsReview ? `<span class="badge badge-review">Review</span>` : '';
+    const opts = getAllCatsWithIncome().map(c => `<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('');
+    return `<tr>
+      <td class="tx-date">${t.date.slice(5).replace('-','/')}</td>
+      <td class="tx-desc">${t.desc}${reviewBadge}<span class="tx-account">${acctLabel}</span></td>
+      <td><select class="cat-select" onchange="updatePersonalCat('${t.id}',this.value)">${opts}</select></td>
+      <td class="tx-amount ${sign}">${t.amount>=0?'+':''}${fmt(t.amount)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// PERSONAL INSIGHTS
+// ═══════════════════════════════════════════════
+function renderPersonalInsights(year, month, current) {
+  const el = document.getElementById('personal-insights');
+  if (!el) return;
+  const insights = [];
+  const prev = month > 1 ? computePersonalSummary(getPersonalMonth(year, month-1)) : null;
+
+  if (prev && prev.income > 0) {
+    const incomeDelta = current.income - prev.income;
+    const incomePct = (incomeDelta / prev.income * 100);
+    if (Math.abs(incomePct) >= 3) insights.push({
+      icon: incomeDelta >= 0 ? '💰' : '📉',
+      title: `Income ${incomeDelta >= 0 ? 'up' : 'down'} ${Math.abs(incomePct).toFixed(0)}% vs last month`,
+      body: `${MONTHS[month-2]}: ${fmt(prev.income)} → ${MONTHS[month-1]}: ${fmt(current.income)}`
+    });
+
+    const expDelta = current.expenses - prev.expenses;
+    const expPct = prev.expenses > 0 ? (expDelta / prev.expenses * 100) : 0;
+    if (Math.abs(expPct) >= 10 && Math.abs(expDelta) > 50) insights.push({
+      icon: expDelta > 0 ? '⚠️' : '✅',
+      title: `Expenses ${expDelta > 0 ? 'up' : 'down'} ${Math.abs(expPct).toFixed(0)}% vs last month`,
+      body: `${MONTHS[month-2]}: ${fmt(prev.expenses)} → ${MONTHS[month-1]}: ${fmt(current.expenses)}`
+    });
+
+    for (const [cat, amt] of Object.entries(current.expByCat)) {
+      const prevAmt = prev.expByCat[cat] || 0;
+      if (prevAmt > 0 && Math.abs(amt - prevAmt) > 30 && Math.abs((amt-prevAmt)/prevAmt) >= 0.2) {
+        const pct = ((amt-prevAmt)/prevAmt*100);
+        insights.push({
+          icon: pct > 0 ? '📊' : '✅',
+          title: `${cat} ${pct > 0 ? 'spike' : 'drop'}: ${Math.abs(pct).toFixed(0)}%`,
+          body: `${MONTHS[month-2]}: ${fmt(prevAmt)} → ${MONTHS[month-1]}: ${fmt(amt)} (${fmtSigned(amt-prevAmt)})`
+        });
+      }
+    }
+  }
+
+  const goal = DB.settings.savingsGoalPct;
+  if (current.income > 0) insights.push({
+    icon: current.savingsPct >= goal ? '🎯' : '💡',
+    title: current.savingsPct >= goal
+      ? `Savings goal met: ${current.savingsPct.toFixed(1)}%`
+      : `Below savings goal (${current.savingsPct.toFixed(1)}% vs ${goal}% target)`,
+    body: `Saved ${fmt(Math.max(0, current.savings))} of ${fmt(current.income)} income`
+  });
+
+  const topExp = Object.entries(current.expByCat).sort((a,b)=>b[1]-a[1])[0];
+  if (topExp) insights.push({ icon: '🏷️', title: `Top expense: ${topExp[0]}`, body: `${fmt(topExp[1])} this month` });
+
+  if (!insights.length) insights.push({ icon: '📊', title: 'No insights yet', body: 'Add more months to see trends.' });
+
+  el.innerHTML = insights.map(i =>
+    `<div class="insight-card"><div class="insight-icon">${i.icon}</div><div class="insight-body"><strong>${i.title}</strong><p>${i.body}</p></div></div>`
+  ).join('');
+}
+
+function updatePersonalCat(id, cat) {
+  const tx = DB.personal.find(t => t.id === id);
+  if (tx) { tx.cat = cat; tx.needsReview = false; saveData(); renderPersonalMonthly(); }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER: FAMILY YEARLY
+// ═══════════════════════════════════════════════
+function renderFamilyYearly() {
+  const ys = getFamilyYearlySummary(2026);
+  const monthsWithData = ys.monthly.filter(m => m.total > 0).length;
+  const avg = monthsWithData > 0 ? ys.yearTotal / monthsWithData : 0;
+  const wliPct = ys.yearTotal > 0 ? (ys.yearWli/ys.yearTotal*100).toFixed(0) : 0;
+  const zxPct  = ys.yearTotal > 0 ? (ys.yearZxing/ys.yearTotal*100).toFixed(0) : 0;
+
+  document.getElementById('family-yearly-cards').innerHTML = `
+    <div class="card expense">
+      <div class="card-label">Total Spending</div>
+      <div class="card-value red">${fmt(ys.yearTotal)}</div>
+      <div class="card-sub">Jan – Feb 2026</div>
+    </div>
+    <div class="card neutral">
+      <div class="card-label">Monthly Average</div>
+      <div class="card-value">${fmt(avg)}</div>
+      <div class="card-sub">Over ${monthsWithData} active month${monthsWithData!==1?'s':''}</div>
+    </div>
+    <div class="card wli">
+      <div class="card-label">W LI Total</div>
+      <div class="card-value blue">${fmt(ys.yearWli)}</div>
+      <div class="card-sub">${wliPct}% of total</div>
+    </div>
+    <div class="card zxing">
+      <div class="card-label">Z XING Total</div>
+      <div class="card-value purple">${fmt(ys.yearZxing)}</div>
+      <div class="card-sub">${zxPct}% of total</div>
+    </div>`;
+
+  const topCats = Object.entries(ys.yearByCat).sort((a,b)=>b[1]-a[1]).slice(0,7).map(([c])=>c);
+  makeBarChart('chart-family-yearly-bar', MONTHS, topCats.map(cat => ({
+    label: cat,
+    data: ys.monthly.map(m => (m.byCat[cat]||0).toFixed(2)),
+    backgroundColor: catColor(cat) + 'cc',
+    borderRadius: 3,
+  })), true);
+
+  const entries = Object.entries(ys.yearByCat).sort((a,b)=>b[1]-a[1]);
+  makeDonutChart('chart-family-yearly-donut', entries.map(([c])=>c), entries.map(([,v])=>v), entries.map(([c])=>catColor(c)));
+  renderCatList('family-yearly-cats', ys.yearByCat);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER: FAMILY MONTHLY
+// ═══════════════════════════════════════════════
+function renderFamilyMonthly() {
+  const { year, month } = state.familyMonth;
+  const txs = getFamilyMonth(year, month);
+  const s = computeFamilySummary(txs);
+
+  document.getElementById('family-month-label').textContent = monthName(year, month);
+  document.getElementById('family-prev').disabled = month <= 1;
+  document.getElementById('family-next').disabled = month >= 12;
+
+  const topCat = Object.entries(s.byCat).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('family-monthly-cards').innerHTML = `
+    <div class="card expense">
+      <div class="card-label">Total Spending</div>
+      <div class="card-value red">${fmt(s.total)}</div>
+      <div class="card-sub">${txs.length} transactions</div>
+    </div>
+    <div class="card wli">
+      <div class="card-label">W LI</div>
+      <div class="card-value blue">${fmt(s.wli)}</div>
+      <div class="card-sub">${s.total>0?(s.wli/s.total*100).toFixed(0):0}% of total</div>
+    </div>
+    <div class="card zxing">
+      <div class="card-label">Z XING</div>
+      <div class="card-value purple">${fmt(s.zxing)}</div>
+      <div class="card-sub">${s.total>0?(s.zxing/s.total*100).toFixed(0):0}% of total</div>
+    </div>
+    <div class="card neutral">
+      <div class="card-label">Top Category</div>
+      <div class="card-value" style="font-size:20px">${topCat?.[0] || '—'}</div>
+      <div class="card-sub">${topCat?fmt(topCat[1]):'—'} this month</div>
+    </div>`;
+
+  renderFamilyInsights(year, month, s);
+  renderPersonBreakdown(txs);
+
+  const entries = Object.entries(s.byCat).sort((a,b)=>b[1]-a[1]);
+  makePieChart('chart-family-monthly-pie', entries.map(([c])=>c), entries.map(([,v])=>v), entries.map(([c])=>catColor(c)));
+  renderCatList('family-monthly-cats', s.byCat);
+
+  // Populate family category filter
+  const catFilter = document.getElementById('family-cat-filter');
+  if (catFilter) {
+    const currentVal = state.familyFilter.category;
+    const cats = [...new Set(txs.map(t => t.cat))].sort();
+    catFilter.innerHTML = `<option value="all">All Categories</option>` +
+      cats.map(c => `<option value="${c}" ${currentVal===c?'selected':''}>${c}</option>`).join('');
+  }
+
+  renderFamilyTxTable();
+}
+
+// ═══════════════════════════════════════════════
+// FAMILY TX TABLE (separated for filter updates)
+// ═══════════════════════════════════════════════
+function renderFamilyTxTable() {
+  const { year, month } = state.familyMonth;
+  const allTxs = getFamilyMonth(year, month);
+  let filtered = allTxs;
+  if (state.familyFilter.member !== 'all') {
+    filtered = filtered.filter(t => t.member === state.familyFilter.member);
+  }
+  if (state.familyFilter.category !== 'all') {
+    filtered = filtered.filter(t => t.cat === state.familyFilter.category);
+  }
+  const sorted = [...filtered].sort((a,b) => a.date.localeCompare(b.date));
+  const countEl = document.getElementById('family-tx-count');
+  if (countEl) countEl.textContent = filtered.length === allTxs.length
+    ? `${allTxs.length} transactions`
+    : `showing ${filtered.length} of ${allTxs.length} transactions`;
+  const tbody = document.getElementById('family-tx-body');
+  if (!tbody) return;
+  tbody.innerHTML = sorted.map(t => {
+    const mc = t.member === 'W LI' ? 'wli' : 'zxing';
+    const opts = getAllExpCats().map(c => `<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('');
+    return `<tr>
+      <td class="tx-date">${t.date.slice(5).replace('-','/')}</td>
+      <td class="tx-desc">${t.desc}</td>
+      <td><span class="member-pill ${mc}">${t.member}</span></td>
+      <td><select class="cat-select" onchange="updateFamilyCat('${t.id}',this.value)">${opts}</select></td>
+      <td class="tx-amount expense">${fmt(t.amount)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// FAMILY INSIGHTS
+// ═══════════════════════════════════════════════
+function renderFamilyInsights(year, month, current) {
+  const el = document.getElementById('family-insights');
+  const insights = [];
+  const prev = month > 1 ? computeFamilySummary(getFamilyMonth(year, month-1)) : null;
+
+  if (prev && prev.total > 0) {
+    const delta = current.total - prev.total;
+    const deltaPct = (delta / prev.total * 100);
+    if (Math.abs(deltaPct) >= 5) {
+      insights.push({
+        icon: deltaPct < 0 ? '📉' : '📈',
+        title: `Spending ${deltaPct < 0 ? 'down' : 'up'} ${Math.abs(deltaPct).toFixed(0)}% vs last month`,
+        body: `${MONTHS[month-2]} total was ${fmt(prev.total)}. This month: ${fmt(current.total)} (${fmtSigned(delta)}).`
+      });
+    }
+    for (const [cat, amt] of Object.entries(current.byCat)) {
+      const prevAmt = prev.byCat[cat] || 0;
+      if (prevAmt > 0 && Math.abs(amt - prevAmt) > 50 && Math.abs((amt-prevAmt)/prevAmt*100) >= 20) {
+        const pct = ((amt-prevAmt)/prevAmt*100);
+        insights.push({
+          icon: pct > 0 ? '⚠️' : '✅',
+          title: `${cat} ${pct > 0 ? 'up' : 'down'} ${Math.abs(pct).toFixed(0)}%`,
+          body: `${MONTHS[month-2]}: ${fmt(prevAmt)} → this month: ${fmt(amt)} (${fmtSigned(amt-prevAmt)})`
+        });
+      }
+    }
+  }
+
+  const topTx = getFamilyMonth(year, month).sort((a,b) => b.amount-a.amount)[0];
+  if (topTx) insights.push({
+    icon: '🏆',
+    title: `Largest spend: ${fmt(topTx.amount)}`,
+    body: `${topTx.desc} — ${topTx.member} — ${topTx.date.slice(5).replace('-','/')}`
+  });
+
+  if (current.total > 0) insights.push({
+    icon: '👫',
+    title: 'Spending split this month',
+    body: `W LI: ${fmt(current.wli)} (${(current.wli/current.total*100).toFixed(0)}%) — Z XING: ${fmt(current.zxing)} (${(current.zxing/current.total*100).toFixed(0)}%)`
+  });
+
+  if (!insights.length) insights.push({ icon: '📊', title: 'No insights yet', body: 'Add more months of data to see trends.' });
+
+  el.innerHTML = insights.map(i =>
+    `<div class="insight-card"><div class="insight-icon">${i.icon}</div><div class="insight-body"><strong>${i.title}</strong><p>${i.body}</p></div></div>`
+  ).join('');
+}
+
+function updateFamilyCat(id, cat) {
+  const tx = DB.family.find(t => t.id === id);
+  if (tx) { tx.cat = cat; saveData(); renderFamilyMonthly(); }
+}
+
+// ═══════════════════════════════════════════════
+// FINANCE PLAN
+// ═══════════════════════════════════════════════
+function renderFinancePlan() {
+  const contribs = DB.plan.tripContributions.slice().sort((a, b) => a.year !== b.year ? b.year - a.year : b.month - a.month);
+  const totalWanting = contribs.reduce((s, c) => s + (c.wanting || 0), 0);
+  const totalPartner = contribs.reduce((s, c) => s + (c.partner || 0), 0);
+  const total = totalWanting + totalPartner;
+
+  // Total card
+  let subText = '';
+  if (contribs.length > 0) {
+    const oldest = contribs[contribs.length - 1];
+    const newest = contribs[0];
+    subText = MONTHS[oldest.month - 1] + ' ' + oldest.year + (oldest.year !== newest.year || oldest.month !== newest.month ? ' – ' + MONTHS[newest.month - 1] + ' ' + newest.year : '');
+  }
+  document.getElementById('plan-total-card').innerHTML =
+    `<div><div class="plan-total-label">Total Saved</div><div class="plan-total-value">${fmt(total)}</div>${subText ? '<div class="plan-total-sub">' + subText + '</div>' : ''}</div>` +
+    `<div style="margin-left:auto;display:flex;gap:24px;font-size:13px">` +
+    `<div><div style="color:var(--muted);font-size:11px;margin-bottom:2px">Wanting</div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700">${fmt(totalWanting)}</div></div>` +
+    `<div><div style="color:var(--muted);font-size:11px;margin-bottom:2px">Partner</div><div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700">${fmt(totalPartner)}</div></div>` +
+    `</div>`;
+
+  // Bar chart — chronological order
+  const sorted = contribs.slice().sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+  const labels = sorted.map(c => MONTHS[c.month - 1].slice(0, 3) + (sorted.some(x => x.year !== sorted[0].year) ? ' ' + String(c.year).slice(2) : ''));
+  destroyChart('chart-plan-bar');
+  if (sorted.length > 0) {
+    makeBarChart('chart-plan-bar', labels,
+      [{ label: 'Wanting', data: sorted.map(c => c.wanting || 0), backgroundColor: 'rgba(13,148,136,.8)' },
+       { label: 'Partner', data: sorted.map(c => c.partner || 0), backgroundColor: 'rgba(124,58,237,.6)' }],
+      true
+    );
+  }
+
+  // Table
+  const tbody = document.getElementById('plan-table-body');
+  tbody.innerHTML = contribs.map(c => {
+    const rowTotal = (c.wanting || 0) + (c.partner || 0);
+    return `<tr>
+      <td>${MONTHS[c.month - 1]} ${c.year}</td>
+      <td>${fmt(c.wanting || 0)}</td>
+      <td>${fmt(c.partner || 0)}</td>
+      <td>${fmt(rowTotal)}</td>
+      <td><div class="plan-actions">
+        <button class="plan-actions-btn" title="Edit" onclick="openLogModal(${c.year},${c.month})">✏</button>
+        <button class="plan-actions-btn" title="Delete" onclick="deleteContribution(${c.year},${c.month})">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="color:var(--muted2);text-align:center;padding:20px">No contributions logged yet.</td></tr>';
+
+  const tfoot = document.getElementById('plan-table-foot');
+  tfoot.innerHTML = total > 0
+    ? `<tr><td>Total</td><td>${fmt(totalWanting)}</td><td>${fmt(totalPartner)}</td><td>${fmt(total)}</td><td></td></tr>`
+    : '';
+}
+
+function openLogModal(year, month) {
+  const modal = document.getElementById('log-modal');
+  if (year && month) {
+    document.getElementById('log-modal-title').textContent = 'Edit Month';
+    document.getElementById('log-month').value = month;
+    document.getElementById('log-year').value = year;
+    const existing = DB.plan.tripContributions.find(c => c.year === year && c.month === month);
+    document.getElementById('log-wanting').value = existing ? existing.wanting : '';
+    document.getElementById('log-partner').value = existing ? existing.partner : '';
+  } else {
+    document.getElementById('log-modal-title').textContent = 'Log Month';
+    document.getElementById('log-month').value = new Date().getMonth() + 1;
+    document.getElementById('log-year').value = new Date().getFullYear();
+    document.getElementById('log-wanting').value = '';
+    document.getElementById('log-partner').value = '';
+  }
+  modal.classList.add('open');
+}
+
+function closeLogModal() {
+  document.getElementById('log-modal').classList.remove('open');
+}
+
+function saveContribution() {
+  const year  = parseInt(document.getElementById('log-year').value);
+  const month = parseInt(document.getElementById('log-month').value);
+  const wanting = parseFloat(document.getElementById('log-wanting').value) || 0;
+  const partner = parseFloat(document.getElementById('log-partner').value) || 0;
+  const idx = DB.plan.tripContributions.findIndex(c => c.year === year && c.month === month);
+  if (idx >= 0) DB.plan.tripContributions[idx] = { year, month, wanting, partner };
+  else DB.plan.tripContributions.push({ year, month, wanting, partner });
+  saveData();
+  closeLogModal();
+  renderFinancePlan();
+}
+
+function deleteContribution(year, month) {
+  if (!confirm('Remove ' + MONTHS[month - 1] + ' ' + year + '?')) return;
+  DB.plan.tripContributions = DB.plan.tripContributions.filter(c => !(c.year === year && c.month === month));
+  saveData();
+  renderFinancePlan();
+}
+
+// ═══════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════
+function setPersonalFilter(key, val) {
+  state.personalFilter[key] = val;
+  renderPersonalTxTable();
+}
+function setFamilyFilter(key, val) {
+  state.familyFilter[key] = val;
+  renderFamilyTxTable();
+}
+
+// ═══════════════════════════════════════════════
+// STATE & NAV
+// ═══════════════════════════════════════════════
+const state = {
+  activeTab: 'personal',
+  personalView: 'yearly',
+  familyView: 'yearly',
+  personalMonth: { year: 2026, month: 1 },
+  familyMonth: { year: 2026, month: 1 },
+  personalFilter: { account: 'all', category: 'all' },
+  familyFilter: { member: 'all', category: 'all' },
+};
+
+function rerender() {
+  if (state.activeTab === 'personal') {
+    if (state.personalView === 'yearly') renderPersonalYearly();
+    else renderPersonalMonthly();
+  } else if (state.activeTab === 'family') {
+    if (state.familyView === 'yearly') renderFamilyYearly();
+    else renderFamilyMonthly();
+  } else {
+    renderFinancePlan();
+  }
+}
+
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('onclick') === "switchTab('" + tab + "')"));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'personal') renderPersonalYearly();
+  else if (tab === 'family') renderFamilyYearly();
+  else renderFinancePlan();
+}
+
+function switchPersonalView(view) {
+  state.personalView = view;
+  document.querySelectorAll('#tab-personal .sub-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase().startsWith(view)));
+  document.querySelectorAll('#tab-personal .view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('personal-' + view).classList.add('active');
+  if (view === 'yearly') renderPersonalYearly();
+  else renderPersonalMonthly();
+}
+
+function switchFamilyView(view) {
+  state.familyView = view;
+  document.querySelectorAll('#tab-family .sub-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase().startsWith(view)));
+  document.querySelectorAll('#tab-family .view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('family-' + view).classList.add('active');
+  if (view === 'yearly') renderFamilyYearly();
+  else renderFamilyMonthly();
+}
+
+function changePersonalMonth(dir) {
+  let { year, month } = state.personalMonth;
+  month += dir;
+  if (month < 1) { month = 12; year--; }
+  if (month > 12) { month = 1; year++; }
+  state.personalMonth = { year, month };
+  state.personalFilter = { account: 'all', category: 'all' };
+  renderPersonalMonthly();
+}
+
+function changeFamilyMonth(dir) {
+  let { year, month } = state.familyMonth;
+  month += dir;
+  if (month < 1) { month = 12; year--; }
+  if (month > 12) { month = 1; year++; }
+  state.familyMonth = { year, month };
+  state.familyFilter = { member: 'all', category: 'all' };
+  renderFamilyMonthly();
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+renderPersonalYearly();
+
+const reviewCount = DB.personal.filter(t => t.needsReview).length;
+if (reviewCount > 0) {
+  document.getElementById('review-banner').classList.add('visible');
+  document.getElementById('review-count').textContent = `${reviewCount} transaction${reviewCount>1?'s':''} need${reviewCount===1?'s':''} your review`;
+}
+</script>
+</body>
+</html>

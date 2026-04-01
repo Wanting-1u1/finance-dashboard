@@ -2,6 +2,12 @@
 
 Personal + family finance dashboard. Tracks 3 personal bank accounts and the shared AMEX card.
 
+## Live URL
+
+https://wanting-1u1.github.io/finance-dashboard
+
+Password-protected. Password stored in Claude memory (not saved here).
+
 ## How to Run
 
 ```bash

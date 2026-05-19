@@ -1009,6 +1009,9 @@ function checkPw() {
 // CONFIG
 // ═══════════════════════════════════════════════
 const SAVINGS_GOAL_PCT = 40;
+// UI only — controls category picker ordering and income breakdown grouping.
+// Income vs expense classification is determined by transaction sign (amount > 0 = income),
+// not by membership in this set.
 const INCOME_CATS = new Set(['Salary', 'Interest', 'Other Income']);
 
 const DEFAULT_CAT_COLORS = {
@@ -1028,6 +1031,8 @@ const DEFAULT_CAT_COLORS = {
   'Personal':      '#94a3b8',
   'Bills':         '#d97706',
   'Other':         '#475569',
+  'Internal Transaction': '#94a3b8',
+  'Repayment':                 '#cbd5e1',
 };
 
 const SWATCH_COLORS = [
@@ -1232,6 +1237,13 @@ function loadData() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (!parsed.categories) parsed.categories = { ...DEFAULT_CAT_COLORS };
+      if (!parsed.categories['Internal Transaction']) parsed.categories['Internal Transaction'] = '#94a3b8';
+      if (!parsed.categories['Repayment']) parsed.categories['Repayment'] = '#cbd5e1';
+      // Migrate: rename old Chinese '还款' category → 'Repayment', fix sign (was stored as positive)
+      if (parsed.categories['还款']) { parsed.categories['Repayment'] = parsed.categories['还款']; delete parsed.categories['还款']; }
+      if (parsed.family) parsed.family.forEach(t => {
+        if (t.cat === '还款') { t.cat = 'Repayment'; if (t.amount > 0) t.amount = -t.amount; }
+      });
       if (!parsed.plan) parsed.plan = { ...PLAN_DEFAULT, tripContributions: PLAN_DEFAULT.tripContributions.map(c => ({...c})) };
       return parsed;
     }
@@ -1250,8 +1262,9 @@ let DB = loadData();
 // ═══════════════════════════════════════════════
 // CATEGORY HELPERS
 // ═══════════════════════════════════════════════
-function getAllExpCats()        { return Object.keys(DB.categories).filter(c => !INCOME_CATS.has(c)); }
-function getAllCatsWithIncome() { return [...INCOME_CATS, ...getAllExpCats()]; }
+const SYSTEM_CATS = new Set(['Internal Transaction', 'Repayment']);
+function getAllExpCats()        { return Object.keys(DB.categories).filter(c => !INCOME_CATS.has(c) && !SYSTEM_CATS.has(c)); }
+function getAllCatsWithIncome() { return [...INCOME_CATS, ...getAllExpCats(), ...SYSTEM_CATS]; }
 function catColor(cat)         { return DB.categories[cat] || '#475569'; }
 
 // ═══════════════════════════════════════════════
@@ -1385,61 +1398,107 @@ function autoCategorize(desc) {
 }
 
 function isInternalTransfer(desc, account) {
+  // CommBank: "Transfer To/From Westpac/CommBank/Savings/Spend/Save"
   if (/transfer (to|from) (westpac|commbank|savings|spend|save)/i.test(desc)) return true;
-  if (account === 'westpac-save' && /transfer (to|from)/i.test(desc) && !/rent/i.test(desc)) return true;
+  // CommBank: "Fast Transfer From WANTING LI to PayID Phone Spend/Save"
+  if (/fast transfer.*payid phone/i.test(desc)) return true;
+  // CommBank: generic PayID to own accounts
+  if (/payid phone/i.test(desc) && /transfer/i.test(desc)) return true;
+  // Westpac: "WITHDRAWAL MOBILE TFR Westpac ..." or "DEPOSIT ONLINE TFR Westpac ..."
+  if (/\bTFR\b.*westpac/i.test(desc)) return true;
+  // Westpac: "DEPOSIT ONLINE TFR Wanting Sep" (transfer from Wanting's CommBank)
+  if (/\bTFR\b.*wanting/i.test(desc)) return true;
+  // Westpac: any mobile/online transfer explicitly tagged TFR between own accounts
+  if (/(withdrawal mobile|deposit online).*\bTFR\b/i.test(desc)) return true;
   return false;
 }
 
 async function parseCommBankPDF(buf) {
+  // Text-based parsing: row format is "DD MMM YYYY <description> <amount> <balance>"
+  // PDF sometimes emits the $ sign as a separate text item from the number (e.g. "$ 224.35"),
+  // so we normalise "$ <digit>" → "$<digit>" before matching.
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  const txs = [];
+  const allRows = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
     const rows = groupIntoRows(content.items);
     for (const row of rows) {
-      const text = row.items.map(i => i.str).join(' ').trim();
-      const dateMatch = text.match(/^(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
-      if (!dateMatch) continue;
-      const date = bankDateToISO(dateMatch[1]);
-      if (!date) continue;
-      const rest = text.slice(dateMatch[0].length).trim();
-      const amtMatch = rest.match(/([-]?\d[\d,]*\.\d{2})\s*$/);
-      if (!amtMatch) continue;
-      const amount = parseFloat(amtMatch[1].replace(/,/g,''));
-      const desc = rest.slice(0, rest.lastIndexOf(amtMatch[0])).trim();
-      if (isInternalTransfer(desc, 'commbank')) continue;
-      const cat = autoCategorize(desc);
-      const id = 'import-cb-' + date + '-' + Math.abs(amount);
-      txs.push({ id, account: 'commbank', date, desc, amount, cat: cat || 'Other', needsReview: !cat });
+      const t = row.items.map(i => i.str).join(' ').trim();
+      if (t) allRows.push(t);
     }
+  }
+  const txs = [];
+  for (let i = 0; i < allRows.length; i++) {
+    let text = allRows[i];
+    const dateMatch = text.match(/^(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
+    if (!dateMatch) continue;
+    const date = bankDateToISO(dateMatch[1]);
+    if (!date) continue;
+    let rest = text.slice(dateMatch[0].length).trim();
+    rest = rest.replace(/\$\s+(\d)/g, '$$$1');
+    let twoNums = rest.match(/(-?\$?\d[\d,]*\.\d{2})\s+\$?(\d[\d,]*\.\d{2})\s*$/);
+    if (!twoNums && i + 1 < allRows.length && !allRows[i + 1].match(/^\d{1,2}\s+[A-Z]{3}\s+\d{4}/i)) {
+      rest = (rest + ' ' + allRows[i + 1]).replace(/\$\s+(\d)/g, '$$$1');
+      i++;
+      twoNums = rest.match(/(-?\$?\d[\d,]*\.\d{2})\s+\$?(\d[\d,]*\.\d{2})\s*$/);
+    }
+    if (!twoNums) { console.log('[CB SKIP no match]', rest); continue; }
+    const amount = parseFloat(twoNums[1].replace(/[$,]/g, ''));
+    if (isNaN(amount)) continue;
+    const desc = rest.slice(0, rest.lastIndexOf(twoNums[0])).trim();
+    const id = 'import-cb-' + date + '-' + Math.abs(amount);
+    if (isInternalTransfer(desc, 'commbank')) { txs.push({ id, account: 'commbank', date, desc, amount, cat: 'Internal Transaction', needsReview: false }); continue; }
+    const cat = autoCategorize(desc);
+    console.log('[CB TX]', date, desc, amount, cat);
+    txs.push({ id, account: 'commbank', date, desc, amount, cat: cat || 'Other', needsReview: !cat });
   }
   return txs;
 }
 
 async function parseWestpacPDF(buf, accountType) {
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  const txs = [];
+  // Collect all non-empty rows across all pages first
+  const allRows = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
     const rows = groupIntoRows(content.items);
     for (const row of rows) {
-      const text = row.items.map(i => i.str).join(' ').trim();
-      const dateMatch = text.match(/^(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
-      if (!dateMatch) continue;
-      const date = bankDateToISO(dateMatch[1]);
-      if (!date) continue;
-      const rest = text.slice(dateMatch[0].length).trim();
-      const amtMatch = rest.match(/([-]?\d[\d,]*\.\d{2})\s*$/);
-      if (!amtMatch) continue;
-      const amount = parseFloat(amtMatch[1].replace(/,/g,''));
-      const desc = rest.slice(0, rest.lastIndexOf(amtMatch[0])).trim();
-      if (isInternalTransfer(desc, accountType)) continue;
-      const cat = autoCategorize(desc);
-      const id = 'import-wp-' + accountType + '-' + date + '-' + Math.abs(amount);
-      txs.push({ id, account: accountType, date, desc, amount, cat: cat || 'Other', needsReview: !cat });
+      const t = row.items.map(i => i.str).join(' ').trim();
+      if (t) allRows.push(t);
     }
+  }
+  const txs = [];
+  for (let i = 0; i < allRows.length; i++) {
+    let text = allRows[i];
+    const dateMatch = text.match(/^(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
+    if (!dateMatch) continue;
+    const date = bankDateToISO(dateMatch[1]);
+    if (!date) continue;
+    let rest = text.slice(dateMatch[0].length).trim();
+    // Normalise split "$ 1,234.56" → "$1,234.56" (PDF sometimes emits $ as a separate item)
+    rest = rest.replace(/\$\s+(\d)/g, '$$$1');
+    // Westpac: Description may wrap to next line before the two numeric columns
+    // Keep consuming the next row until we have two numbers at the end
+    let twoNums = rest.match(/(-?\$?\d[\d,]*\.\d{2})\s+\$?(\d[\d,]*\.\d{2})\s*$/);
+    if (!twoNums && i + 1 < allRows.length && !allRows[i + 1].match(/^\d{1,2}\s+[A-Z]{3}\s+\d{4}/i)) {
+      rest = (rest + ' ' + allRows[i + 1]).replace(/\$\s+(\d)/g, '$$$1');
+      i++;
+      twoNums = rest.match(/(-?\$?\d[\d,]*\.\d{2})\s+\$?(\d[\d,]*\.\d{2})\s*$/);
+    }
+    console.log('[WP RAW]', text);
+    if (!twoNums) { console.log('[WP SKIP no match]', rest); continue; }
+    // twoNums[1] = transaction amount (negative = withdrawal/spent, positive = deposit/earned)
+    // twoNums[2] = running balance (ignore)
+    const amount = parseFloat(twoNums[1].replace(/[$,]/g, ''));
+    if (isNaN(amount)) continue;
+    const desc = rest.slice(0, rest.lastIndexOf(twoNums[0])).trim();
+    const id = 'import-wp-' + accountType + '-' + date + '-' + Math.abs(amount);
+    if (isInternalTransfer(desc, accountType)) { txs.push({ id, account: accountType, date, desc, amount, cat: 'Internal Transaction', needsReview: false }); continue; }
+    const cat = autoCategorize(desc);
+    console.log('[WP TX]', accountType, date, desc, amount, cat);
+    txs.push({ id, account: accountType, date, desc, amount, cat: cat || 'Other', needsReview: !cat });
   }
   return txs;
 }
@@ -1455,14 +1514,40 @@ function parseAMEXXLSX(buf) {
     const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
     if (!dateMatch) continue;
     const date = `${dateMatch[3]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`;
-    const desc = String(row[1] || '').trim();
-    const member = String(row[2] || '').trim().toUpperCase().includes('XING') ? 'Z XING' : 'W LI';
-    const rawAmt = parseFloat(String(row[3] || '0').replace(/[,$]/g,''));
+    const desc = String(row[2] || '').trim();
+    const member = String(row[3] || '').trim().toUpperCase().includes('XING') ? 'Z XING' : 'W LI';
+    const rawAmt = parseFloat(String(row[5] || '0').replace(/[,$]/g,''));
     if (isNaN(rawAmt) || rawAmt === 0) continue;
-    const amount = Math.abs(rawAmt);
-    const cat = autoCategorize(desc);
-    const id = 'import-ax-' + date + '-' + amount;
-    txs.push({ id, date, desc, member, amount, cat: cat || 'Other', needsReview: !cat });
+    // Negative AMEX amount = credit card payment or refund → category Repayment, excluded from monthly totals
+    const isPayment = rawAmt < 0;
+    const amount = rawAmt; // keep negative for Repayment so it displays as credit (green)
+    const cat = isPayment ? 'Repayment' : (autoCategorize(desc) || 'Other');
+    const needsReview = isPayment ? false : !autoCategorize(desc);
+    const id = 'import-ax-' + date + '-' + rawAmt;
+    txs.push({ id, date, desc, member, amount, cat, needsReview });
+  }
+  return txs;
+}
+
+// Cross-account internal transfer detection:
+// If two or more personal accounts have the same absolute amount on the same date AND opposite signs
+// (one credit, one debit) → both are internal. Opposite-sign check prevents false positives
+// where two accounts happen to have the same expense amount on the same day.
+function detectCrossAccountInternals(txs) {
+  const map = {};
+  for (const t of txs) {
+    if (t.cat === 'Internal Transaction') continue;
+    const key = t.date + '|' + Math.abs(t.amount).toFixed(2);
+    if (!map[key]) map[key] = [];
+    map[key].push(t);
+  }
+  for (const group of Object.values(map)) {
+    const accounts = new Set(group.map(t => t.account));
+    const hasCredit = group.some(t => t.amount > 0);
+    const hasDebit  = group.some(t => t.amount < 0);
+    if (accounts.size >= 2 && hasCredit && hasDebit) {
+      for (const t of group) { t.cat = 'Internal Transaction'; t.needsReview = false; }
+    }
   }
   return txs;
 }
@@ -1532,6 +1617,10 @@ async function processUpload() {
     }
     DB.personal.push(...pTxs);
     DB.family.push(...fTxs);
+    // Run cross-account detection on the FULL month after merge, so it catches pairs
+    // that span upload sessions (e.g. CommBank uploaded first, Westpac uploaded now).
+    const allMonthPersonal = DB.personal.filter(inMonth);
+    if (allMonthPersonal.length > 0) detectCrossAccountInternals(allMonthPersonal);
     saveData();
     const total = pTxs.length + fTxs.length;
     const rev = [...pTxs, ...fTxs].filter(t => t.needsReview).length;
@@ -1555,25 +1644,30 @@ function getFamilyMonth(year, month) {
   return DB.family.filter(t => { const ym = parseYM(t.date); return ym.year===year && ym.month===month; });
 }
 function computePersonalSummary(txs) {
-  let income = 0, expenses = 0;
+  let income = 0, expenses = 0, internalTotal = 0;
   const expByCat = {}, incByCat = {};
   for (const t of txs) {
-    if (INCOME_CATS.has(t.cat)) {
+    // Internal transfers excluded from income/expense — tracked separately for reconciliation
+    if (t.cat === 'Internal Transaction') { internalTotal += Math.abs(t.amount); continue; }
+    // CommBank: sign from Amount column. Westpac: positive = deposit (income), negative = withdrawal (expense).
+    if (t.amount > 0) {
       income += t.amount;
       incByCat[t.cat] = (incByCat[t.cat] || 0) + t.amount;
-    } else {
+    } else if (t.amount < 0) {
       expenses += Math.abs(t.amount);
       expByCat[t.cat] = (expByCat[t.cat] || 0) + Math.abs(t.amount);
     }
   }
   const savings = income - expenses;
   const savingsPct = income > 0 ? (savings / income) * 100 : 0;
-  return { income, expenses, savings, savingsPct, expByCat, incByCat };
+  return { income, expenses, savings, savingsPct, expByCat, incByCat, internalTotal };
 }
 function computeFamilySummary(txs) {
   let total = 0, wli = 0, zxing = 0;
   const byCat = {}, wliCats = {}, zxingCats = {};
   for (const t of txs) {
+    // Repayment = credit card payment/refund; belongs to prev month, excluded from spending totals
+    if (t.cat === 'Repayment') continue;
     total += t.amount;
     byCat[t.cat] = (byCat[t.cat] || 0) + t.amount;
     if (t.member === 'W LI') {
@@ -1588,19 +1682,20 @@ function computeFamilySummary(txs) {
 }
 function getPersonalYearlySummary(year) {
   const monthly = [];
-  let totalIncome = 0, totalExpenses = 0;
+  let totalIncome = 0, totalExpenses = 0, totalInternal = 0;
   const yearExpByCat = {}, yearIncByCat = {};
   for (let m = 1; m <= 12; m++) {
     const s = computePersonalSummary(getPersonalMonth(year, m));
     monthly.push(s);
     totalIncome += s.income;
     totalExpenses += s.expenses;
+    totalInternal += (s.internalTotal || 0);
     for (const [c, v] of Object.entries(s.expByCat)) yearExpByCat[c] = (yearExpByCat[c]||0) + v;
     for (const [c, v] of Object.entries(s.incByCat)) yearIncByCat[c] = (yearIncByCat[c]||0) + v;
   }
   const savings = totalIncome - totalExpenses;
   const savingsPct = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
-  return { totalIncome, totalExpenses, savings, savingsPct, monthly, yearExpByCat, yearIncByCat };
+  return { totalIncome, totalExpenses, savings, savingsPct, monthly, yearExpByCat, yearIncByCat, totalInternal };
 }
 function getFamilyYearlySummary(year) {
   const monthly = [];
@@ -1691,7 +1786,7 @@ function makePieChart(id, labels, data, colors) {
 function renderCatList(containerId, byCat) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+  const sorted = Object.entries(byCat).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
   const total = sorted.reduce((s,[,v]) => s+v, 0);
   if (!sorted.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No data</p>'; return; }
   el.innerHTML = sorted.map(([cat, amt]) => {
@@ -1793,7 +1888,12 @@ function renderPersonalYearly() {
       <div class="card-value ${goalClass}">${ys.savingsPct.toFixed(1)}%</div>
       <div class="card-sub">Goal: ${goal}%</div>
       <div class="goal-bar"><div class="goal-fill" style="width:${Math.min(ys.savingsPct,100).toFixed(1)}%;background:${ys.savingsPct>=goal?'var(--green)':'var(--blue)'}"></div></div>
-    </div>`;
+    </div>
+    ${ys.totalInternal > 0 ? `<div class="card neutral">
+      <div class="card-label">Internal Transfers</div>
+      <div class="card-value">${fmt(ys.totalInternal)}</div>
+      <div class="card-sub">Excluded from totals</div>
+    </div>` : ''}`;
   renderIncomeBreakdown('personal-yearly-income-breakdown', ys.yearIncByCat, ys.totalIncome);
   makeBarChart('chart-yearly-bar', MONTHS, [
     { label: 'Income',   data: ys.monthly.map(m => m.income.toFixed(2)),              backgroundColor: 'rgba(5,150,105,.7)',   borderRadius: 4 },
@@ -1840,7 +1940,12 @@ function renderPersonalMonthly() {
       <div class="card-value ${goalClass}">${s.savingsPct.toFixed(1)}%</div>
       <div class="card-sub">Goal: ${goal}%</div>
       <div class="goal-bar"><div class="goal-fill" style="width:${Math.min(s.savingsPct,100).toFixed(1)}%;background:${s.savingsPct>=goal?'var(--green)':'var(--blue)'}"></div></div>
-    </div>`;
+    </div>
+    ${s.internalTotal > 0 ? `<div class="card neutral">
+      <div class="card-label">Internal Transfers</div>
+      <div class="card-value">${fmt(s.internalTotal)}</div>
+      <div class="card-sub">Excluded from totals</div>
+    </div>` : ''}`;
 
   renderIncomeBreakdown('personal-monthly-income-breakdown', s.incByCat, s.income);
   renderPersonalInsights(year, month, s);
@@ -2088,13 +2193,13 @@ function renderFamilyTxTable() {
   if (!tbody) return;
   tbody.innerHTML = sorted.map(t => {
     const mc = t.member === 'W LI' ? 'wli' : 'zxing';
-    const opts = getAllExpCats().map(c => `<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('');
+    const opts = [...getAllExpCats(), 'Repayment'].map(c => `<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('');
     return `<tr>
       <td class="tx-date">${t.date.slice(5).replace('-','/')}</td>
       <td class="tx-desc">${t.desc}</td>
       <td><span class="member-pill ${mc}">${t.member}</span></td>
       <td><select class="cat-select" onchange="updateFamilyCat('${t.id}',this.value)">${opts}</select></td>
-      <td class="tx-amount expense">${fmt(t.amount)}</td>
+      <td class="tx-amount ${t.amount < 0 ? 'income' : 'expense'}">${t.amount < 0 ? '-' : ''}${fmt(Math.abs(t.amount))}</td>
     </tr>`;
   }).join('');
 }
